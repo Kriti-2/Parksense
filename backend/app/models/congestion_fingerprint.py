@@ -60,21 +60,24 @@ class CongestionFingerprintEngine:
             congestion_level=level,
         )
 
-    def compute_all_corridors(self, timestamp: datetime | None = None) -> list[CongestionFingerprint]:
-        import random
-
+    def compute_all_corridors(
+        self,
+        timestamp: datetime | None = None,
+        zone_speeds: dict[str, float] | None = None,
+    ) -> list[CongestionFingerprint]:
         ts = timestamp or datetime.utcnow()
         results = []
         for zone, meta in BENGALURU_ZONES.items():
-            random.seed(hash(zone + ts.strftime("%Y%m%d%H")))
-            drop_factor = random.uniform(0.35, 0.95)
-            simulated_speed = meta["baseline_speed_kmh"] * drop_factor
+            if zone_speeds and zone in zone_speeds:
+                speed = zone_speeds[zone]
+            else:
+                speed = meta["baseline_speed_kmh"] * 0.65
             results.append(
                 self.compute(
                     CongestionInput(
                         corridor=zone,
                         timestamp=ts,
-                        traffic_speed_kmh=round(simulated_speed, 2),
+                        traffic_speed_kmh=round(speed, 2),
                     )
                 )
             )

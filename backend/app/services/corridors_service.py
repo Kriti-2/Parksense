@@ -4,11 +4,20 @@ import pandas as pd
 
 from app.services.corridor_protector import GreenCorridorProtector
 from app.utilities.constants import EMERGENCY_CORRIDORS
+from app.utilities.time_context import filter_recent, get_reference_time
 
 
-def build_corridors_response(df: pd.DataFrame) -> dict:
+def build_corridors_response(df: pd.DataFrame, recent_only: bool = True) -> dict:
+    working = df
+    if recent_only and not df.empty:
+        working = filter_recent(
+            df,
+            hours=24,
+            reference=get_reference_time(df, use_wall_clock=True),
+        )
+
     protector = GreenCorridorProtector()
-    statuses = protector.evaluate(df)
+    statuses = protector.evaluate(working)
 
     corridor_geo = []
     for corridor, status in zip(EMERGENCY_CORRIDORS, statuses):

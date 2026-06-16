@@ -4,9 +4,10 @@ const severityStyles = {
   LOW: 'bg-command-accent/20 text-command-accent border-command-accent/30',
 };
 
-export default function EnforcementBrief({ shiftData, predictions }) {
+export default function EnforcementBrief({ shiftData, predictions, corridors }) {
   const assignments = shiftData?.assignments?.slice(0, 5) || [];
   const topPredictions = predictions?.top_risk_zones?.slice(0, 3) || [];
+  const blockedCorridors = corridors?.corridors?.filter((c) => c.status === 'BLOCKED') || [];
 
   return (
     <div className="rounded-xl border border-command-border bg-command-panel p-6">
@@ -29,6 +30,17 @@ export default function EnforcementBrief({ shiftData, predictions }) {
           </div>
         ))}
       </div>
+
+      {blockedCorridors.length > 0 && (
+        <div className="mt-5 border-t border-command-border pt-4">
+          <p className="text-xs font-medium uppercase text-command-danger">Emergency Corridors Blocked</p>
+          {blockedCorridors.map((c) => (
+            <p key={c.id} className="mt-1 text-xs text-gray-400">
+              {c.name} — {c.active_violations} active violations
+            </p>
+          ))}
+        </div>
+      )}
 
       {assignments.length > 0 && (
         <div className="mt-5 border-t border-command-border pt-4">

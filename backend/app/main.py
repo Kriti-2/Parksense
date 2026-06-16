@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -11,11 +12,14 @@ from app.routes import (
     analytics,
     corridors,
     heatmap,
+    live,
     predictions,
     recidivism,
     severity,
     shift_planner,
 )
+from app.services.realtime_engine import get_realtime_engine
+from app.services.realtime_hub import get_realtime_hub
 
 logger = logging.getLogger(__name__)
 scheduler = BackgroundScheduler()
@@ -28,6 +32,17 @@ def _refresh_data_cache():
     store.warm_caches()
 
 
+def _live_tick():
+    """Sync job: refresh live data and broadcast to WebSocket clients."""
+    try:
+        payload = get_realtime_engine().tick()
+        hub = get_realtime_hub()
+        asyncio.run(hub.broadcast(payload))
+        logger.debug("Live tick broadcast to WebSocket clients")
+    except Exception as exc:
+        logger.warning("Live tick failed: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
@@ -38,9 +53,20 @@ async def lifespan(app: FastAPI):
     store.load()
     store.warm_caches()
 
+    get_realtime_engine().tick()
+
     scheduler.add_job(_refresh_data_cache, "interval", hours=6, id="data_refresh")
+    scheduler.add_job(
+        _live_tick,
+        "interval",
+        seconds=settings.live_refresh_seconds,
+        id="live_tick",
+    )
     scheduler.start()
-    logger.info("APScheduler started")
+    logger.info(
+        "APScheduler started (live refresh every %ds)",
+        settings.live_refresh_seconds,
+    )
 
     yield
 
@@ -57,7 +83,7 @@ def create_app() -> FastAPI:
             "AI-powered parking congestion intelligence platform for Bengaluru. "
             "Detects hotspots, quantifies impact, forecasts violations, and prioritizes enforcement."
         ),
-        version="1.0.0",
+        version="1.1.0",
         lifespan=lifespan,
     )
 
@@ -76,11 +102,14 @@ def create_app() -> FastAPI:
     app.include_router(recidivism.router)
     app.include_router(corridors.router)
     app.include_router(shift_planner.router)
+    app.include_router(live.router)
 
     @app.get("/")
     def root():
         return {
             "app": settings.app_name,
+            "version": "1.1.0",
+            "live_mode": settings.live_mode,
             "tagline": (
                 "Not just where violations happen — but what they cost, "
                 "where they'll happen next, and exactly how many officers to deploy where."
@@ -93,6 +122,9 @@ def create_app() -> FastAPI:
                 "/recidivism",
                 "/corridors",
                 "/shift-planner",
+                "/live/status",
+                "/live/ws",
+                "/ingest/violation",
             ],
         }
 
@@ -100,7 +132,12 @@ def create_app() -> FastAPI:
     def health():
         store = get_data_store()
         df = store.load()
-        return {"status": "healthy", "violations_loaded": len(df)}
+        live = get_realtime_engine().get_status()
+        return {
+            "status": "healthy",
+            "violations_loaded": len(df),
+            "live": live,
+        }
 
     return app
 

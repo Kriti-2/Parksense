@@ -13,9 +13,6 @@ export default function DashboardLayout() {
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-400">
             <span>Bengaluru, KA</span>
-            <span className="rounded-full bg-command-accent/20 px-3 py-1 text-xs font-medium text-command-accent">
-              LIVE
-            </span>
           </div>
         </header>
         <div className="flex-1 overflow-y-auto p-8">

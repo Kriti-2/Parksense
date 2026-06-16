@@ -13,22 +13,12 @@ class GreenCorridorProtector:
         now = datetime.utcnow().isoformat()
         results: list[CorridorStatus] = []
 
-        recent = pd.DataFrame()
-        if not violations_df.empty and "created_datetime" in violations_df.columns:
-            recent = violations_df.copy()
-            recent["created_datetime"] = pd.to_datetime(
-                recent["created_datetime"], utc=True, errors="coerce"
-            )
-            cutoff = pd.Timestamp.utcnow() - pd.Timedelta(hours=24)
-            recent = recent[recent["created_datetime"] >= cutoff]
-
         for corridor in EMERGENCY_CORRIDORS:
             corridor_zones = set(corridor["zones"])
-            if not recent.empty:
-                active = recent[recent["zone"].isin(corridor_zones)]
-                active_count = len(active)
+            if not violations_df.empty and "zone" in violations_df.columns:
+                active_count = len(violations_df[violations_df["zone"].isin(corridor_zones)])
             else:
-                active_count = self._mock_active_count(corridor["id"])
+                active_count = 0
 
             status = self._derive_status(active_count, corridor["priority"])
             results.append(
@@ -55,7 +45,3 @@ class GreenCorridorProtector:
         if active_violations >= 1:
             return "CAUTION"
         return "CLEAR"
-
-    def _mock_active_count(self, corridor_id: str) -> int:
-        mock = {"EC-001": 4, "EC-002": 2, "EC-003": 1, "EC-004": 0}
-        return mock.get(corridor_id, 0)

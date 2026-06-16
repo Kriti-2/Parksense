@@ -5,7 +5,12 @@ import pandas as pd
 from app.models.congestion_fingerprint import CongestionFingerprintEngine
 
 
-def build_heatmap_response(df: pd.DataFrame, limit: int = 2000) -> dict:
+def build_heatmap_response(
+    df: pd.DataFrame,
+    limit: int = 2000,
+    zone_intensity: dict | None = None,
+    zone_speeds: dict[str, float] | None = None,
+) -> dict:
     if len(df) > limit:
         sample = df.dropna(subset=["latitude", "longitude"]).sample(n=limit, random_state=42)
     else:
@@ -30,16 +35,18 @@ def build_heatmap_response(df: pd.DataFrame, limit: int = 2000) -> dict:
             }
         )
 
-    engine = CongestionFingerprintEngine()
-    congestion = engine.compute_all_corridors()
-    zone_intensity = {
-        fp.corridor: {
-            "congestion_score": fp.congestion_score,
-            "speed_drop_pct": fp.speed_drop_pct,
-            "level": fp.congestion_level.value,
+    if zone_intensity is None:
+        engine = CongestionFingerprintEngine()
+        congestion = engine.compute_all_corridors(zone_speeds=zone_speeds)
+        zone_intensity = {
+            fp.corridor: {
+                "congestion_score": fp.congestion_score,
+                "speed_drop_pct": fp.speed_drop_pct,
+                "level": fp.congestion_level.value,
+                "current_speed_kmh": fp.current_speed_kmh,
+            }
+            for fp in congestion
         }
-        for fp in congestion
-    }
 
     return {
         "type": "FeatureCollection",

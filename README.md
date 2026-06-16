@@ -56,8 +56,11 @@ UI: http://localhost:5173
 | `GET /recidivism` | Recidivism heatmap engine |
 | `GET /corridors` | Green corridor protector |
 | `GET /shift-planner` | Officer deployment planner |
+| `GET /live/status` | Live data source status |
+| `WS /live/ws` | Real-time WebSocket updates (30s) |
+| `POST /ingest/violation` | Ingest live violation |
 
-## Tech Stack
+**Live mode:** See [backend/LIVE.md](backend/LIVE.md) — real Bengaluru violations stream + optional Google Maps/TomTom traffic.
 
 - **Frontend:** React 18, Vite, Tailwind CSS, Recharts, Axios, React Router, Leaflet
 - **Backend:** Python, FastAPI, Pandas, NumPy, Prophet, Scikit-Learn, SQLite, APScheduler

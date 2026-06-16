@@ -17,6 +17,8 @@ export const api = {
   getCorridors: () => client.get('/corridors'),
   getShiftPlanner: () => client.get('/shift-planner'),
   getHealth: () => client.get('/health'),
+  getLiveStatus: () => client.get('/live/status'),
+  ingestViolation: (data) => client.post('/ingest/violation', data),
 };
 
 export default client;

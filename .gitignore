@@ -1,0 +1,35 @@
+# Python
+backend/venv/
+backend/.env
+**/__pycache__/
+**/*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Database
+backend/data/*.db
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Environment
+.env
+.env.local
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Hackathon dataset (104MB — exceeds GitHub 100MB limit; place locally per README)
+jan to may police violation_anonymized791b166 (2).csv
+*.csv
+
+# Cursor / local assets
+.cursor/

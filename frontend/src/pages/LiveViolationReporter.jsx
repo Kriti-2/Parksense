@@ -1,7 +1,24 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import LiveStatusBar from '../components/LiveStatusBar';
+
+// Fix Leaflet marker icon asset loading in Vite
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+});
+
+const BENGALURU_CENTER = [12.9716, 77.5946];
 
 const BENGALURU_ZONES = [
   { name: 'Koramangala', center: [12.9352, 77.6245] },
@@ -22,6 +39,57 @@ const VIOLATION_OPTIONS = [
   'PARKING ON FOOTPATH',
 ];
 
+// Helper to handle clicks on the map to set coordinates
+function MapClickEvents({ onClick }) {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return null;
+}
+
+// Helper to center map on state change
+function ChangeMapCenter({ center }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
+  return null;
+}
+
+// Draggable marker wrapper
+function DraggableMarker({ position, onChange }) {
+  const markerRef = useRef(null);
+  const eventHandlers = useMemo(
+    () => ({
+      dragend() {
+        const marker = markerRef.current;
+        if (marker != null) {
+          const latlng = marker.getLatLng();
+          onChange(latlng.lat, latlng.lng);
+        }
+      },
+    }),
+    [onChange]
+  );
+
+  return (
+    <Marker
+      draggable={true}
+      eventHandlers={eventHandlers}
+      position={position}
+      ref={markerRef}
+    >
+      <Popup>
+        <span className="text-xs">Drag me to adjust coordinates!</span>
+      </Popup>
+    </Marker>
+  );
+}
+
 export default function LiveViolationReporter() {
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
@@ -30,6 +98,7 @@ export default function LiveViolationReporter() {
   const [nearIntersection, setNearIntersection] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [gpsLoading, setGpsLoading] = useState(false);
   const [notification, setNotification] = useState(null);
   const [recentReports, setRecentReports] = useState([]);
   const [lastTick, setLastTick] = useState(null);
@@ -53,6 +122,43 @@ export default function LiveViolationReporter() {
     }
   }
 
+  // Handle map click events
+  function handleMapClick(clickedLat, clickedLng) {
+    setLat(clickedLat.toFixed(6));
+    setLng(clickedLng.toFixed(6));
+    showToast('info', 'Coordinates set from map click!');
+  }
+
+  // Handle marker drag events
+  function handleMarkerDrag(draggedLat, draggedLng) {
+    setLat(draggedLat.toFixed(6));
+    setLng(draggedLng.toFixed(6));
+  }
+
+  // Geolocation API to get browser coordinates
+  function handleUseGPS() {
+    if (!navigator.geolocation) {
+      showToast('error', 'Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setGpsLoading(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLat(position.coords.latitude.toFixed(6));
+        setLng(position.coords.longitude.toFixed(6));
+        setGpsLoading(false);
+        showToast('success', '📍 Coordinates successfully loaded from GPS!');
+      },
+      (error) => {
+        console.error(error);
+        setGpsLoading(false);
+        showToast('error', `GPS Error: ${error.message}. Please allow location access.`);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
   // Generate random Bengaluru violation coordinates & fields
   function handleGenerateRandom() {
     const randomZone = BENGALURU_ZONES[Math.floor(Math.random() * BENGALURU_ZONES.length)];
@@ -65,7 +171,6 @@ export default function LiveViolationReporter() {
     const randVehicle = VEHICLE_OPTIONS[Math.floor(Math.random() * VEHICLE_OPTIONS.length)];
     setVehicleType(randVehicle);
 
-    // Pick 1-2 random violations
     const shuffled = [...VIOLATION_OPTIONS].sort(() => 0.5 - Math.random());
     setSelectedViolations(shuffled.slice(0, Math.floor(Math.random() * 2) + 1));
 
@@ -77,7 +182,7 @@ export default function LiveViolationReporter() {
     setNotification({ type, text });
     setTimeout(() => {
       setNotification(null);
-    }, 4000);
+    }, 4500);
   }
 
   // Submit handler
@@ -85,7 +190,7 @@ export default function LiveViolationReporter() {
     if (e) e.preventDefault();
 
     if (!lat || !lng) {
-      showToast('error', 'Please enter valid Latitude and Longitude');
+      showToast('error', 'Please select or enter coordinates first.');
       return;
     }
 
@@ -102,7 +207,6 @@ export default function LiveViolationReporter() {
       const response = await api.ingestViolation(payload);
       showToast('success', 'Violation ingested successfully! Dashboard updated.');
 
-      // Add to session list
       const ingestedData = response.data.ingested || payload;
       setRecentReports((prev) => [
         {
@@ -163,6 +267,15 @@ export default function LiveViolationReporter() {
     }
   }
 
+  const currentPosition = useMemo(() => {
+    const latitude = parseFloat(lat);
+    const longitude = parseFloat(lng);
+    if (!isNaN(latitude) && !isNaN(longitude)) {
+      return [latitude, longitude];
+    }
+    return null;
+  }, [lat, lng]);
+
   return (
     <div className="space-y-6">
       {/* Header and Live Status Bar */}
@@ -196,156 +309,162 @@ export default function LiveViolationReporter() {
 
       {/* Main Layout Grid */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Ingestion Form Card */}
-        <div className="lg:col-span-2 rounded-xl border border-command-border bg-command-panel p-6">
-          <h3 className="mb-4 text-lg font-semibold text-white">Ingest New Violation Event</h3>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-medium text-gray-400">Latitude</label>
-                <input
-                  type="number"
-                  step="0.000001"
-                  value={lat}
-                  onChange={(e) => setLat(e.target.value)}
-                  placeholder="e.g. 12.935245"
-                  className="mt-1 w-full rounded-lg border border-command-border bg-command-bg px-3 py-2 text-white outline-none focus:border-command-accent"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-400">Longitude</label>
-                <input
-                  type="number"
-                  step="0.000001"
-                  value={lng}
-                  onChange={(e) => setLng(e.target.value)}
-                  placeholder="e.g. 77.624512"
-                  className="mt-1 w-full rounded-lg border border-command-border bg-command-bg px-3 py-2 text-white outline-none focus:border-command-accent"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div>
-                <label className="block text-xs font-medium text-gray-400">Vehicle Type</label>
-                <select
-                  value={vehicleType}
-                  onChange={(e) => setVehicleType(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-command-border bg-command-bg px-3 py-2 text-white outline-none focus:border-command-accent"
-                >
-                  {VEHICLE_OPTIONS.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center pt-5">
-                <label className="flex items-center gap-2 cursor-pointer select-none">
-                  <input
-                    type="checkbox"
-                    checked={nearIntersection}
-                    onChange={(e) => setNearIntersection(e.target.checked)}
-                    className="h-4 w-4 rounded border-command-border bg-command-bg text-command-accent accent-command-accent focus:ring-0"
-                  />
-                  <span className="text-xs font-medium text-gray-400">Near Traffic Intersection</span>
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-2">Violation Types (select at least one)</label>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {VIOLATION_OPTIONS.map((opt) => {
-                  const isChecked = selectedViolations.includes(opt);
-                  return (
-                    <label
-                      key={opt}
-                      onClick={() => handleViolationChange(opt)}
-                      className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium cursor-pointer transition-colors ${
-                        isChecked
-                          ? 'border-command-accent/50 bg-command-accent/10 text-white'
-                          : 'border-command-border bg-command-bg text-gray-400 hover:border-gray-600'
-                      }`}
+        {/* Left Form: Ingest New Violation Event */}
+        <div className="lg:col-span-2 rounded-xl border border-command-border bg-command-panel p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="mb-4 text-lg font-semibold text-white">Ingest New Violation Event</h3>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <div className="flex justify-between items-center">
+                    <label className="block text-xs font-medium text-gray-400">Latitude</label>
+                    <button
+                      type="button"
+                      onClick={handleUseGPS}
+                      disabled={gpsLoading}
+                      className="text-[10px] text-command-accent hover:underline flex items-center gap-1 font-semibold"
                     >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        readOnly
-                        className="h-3.5 w-3.5 rounded border-command-border bg-command-bg text-command-accent accent-command-accent"
-                      />
-                      <span>{opt}</span>
-                    </label>
-                  );
-                })}
+                      {gpsLoading ? 'Locating...' : '📍 Use GPS Location'}
+                    </button>
+                  </div>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={lat}
+                    onChange={(e) => setLat(e.target.value)}
+                    placeholder="e.g. 12.935245"
+                    className="mt-1 w-full rounded-lg border border-command-border bg-command-bg px-3 py-2 text-white outline-none focus:border-command-accent"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-400">Longitude</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    value={lng}
+                    onChange={(e) => setLng(e.target.value)}
+                    placeholder="e.g. 77.624512"
+                    className="mt-1 w-full rounded-lg border border-command-border bg-command-bg px-3 py-2 text-white outline-none focus:border-command-accent"
+                    required
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-lg bg-command-accent py-2.5 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {loading ? 'Submitting Violation...' : 'Ingest Custom Violation'}
-              </button>
-            </div>
-          </form>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-400">Vehicle Type</label>
+                  <select
+                    value={vehicleType}
+                    onChange={(e) => setVehicleType(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-command-border bg-command-bg px-3 py-2 text-white outline-none focus:border-command-accent"
+                  >
+                    {VEHICLE_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex items-center pt-5">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={nearIntersection}
+                      onChange={(e) => setNearIntersection(e.target.checked)}
+                      className="h-4 w-4 rounded border-command-border bg-command-bg text-command-accent accent-command-accent focus:ring-0"
+                    />
+                    <span className="text-xs font-medium text-gray-400">Near Traffic Intersection</span>
+                  </label>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-gray-400 mb-2">Violation Types (select at least one)</label>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {VIOLATION_OPTIONS.map((opt) => {
+                    const isChecked = selectedViolations.includes(opt);
+                    return (
+                      <label
+                        key={opt}
+                        onClick={() => handleViolationChange(opt)}
+                        className={`flex items-center gap-2 rounded-lg border p-2 text-xs font-medium cursor-pointer transition-colors ${
+                          isChecked
+                            ? 'border-command-accent/50 bg-command-accent/10 text-white'
+                            : 'border-command-border bg-command-bg text-gray-400 hover:border-gray-600'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          readOnly
+                          className="h-3.5 w-3.5 rounded border-command-border bg-command-bg text-command-accent accent-command-accent"
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full rounded-lg bg-command-accent py-2.5 font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {loading ? 'Submitting Violation...' : 'Ingest Custom Violation'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
 
-        {/* Quick Demo Controls Panel */}
+        {/* Right Form: Leaflet Coordinate Picker Map */}
         <div className="rounded-xl border border-command-border bg-command-panel p-6 flex flex-col justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-white mb-2">Judge Demo Actions</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">Map Picker</h3>
             <p className="text-xs text-command-muted mb-4">
-              Use these shortcuts to showcase instant live updates during the hackathon.
+              Click anywhere on the map to automatically populate coordinates, or drag the marker to adjust.
             </p>
 
-            <div className="space-y-4">
-              <button
-                type="button"
-                onClick={handleGenerateRandom}
-                className="w-full flex items-center justify-center gap-2 rounded-lg border border-command-border bg-command-bg py-3 text-sm font-medium text-white hover:bg-white/5 transition-colors"
-              >
-                <span className="text-command-warning text-lg">⚙</span>
-                Generate Random Bengaluru Data
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSendDemo}
-                disabled={loading}
-                className="w-full flex items-center justify-center gap-2 rounded-lg bg-command-success py-3 text-sm font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                <span className="text-lg">⚡</span>
-                Send Live Demo Violation
-              </button>
+            <div className="h-64 rounded-lg overflow-hidden border border-command-border">
+              <MapContainer center={BENGALURU_CENTER} zoom={11} scrollWheelZoom style={{ height: '100%' }}>
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
+                  url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                />
+                <MapClickEvents onClick={handleMapClick} />
+                {currentPosition && (
+                  <>
+                    <DraggableMarker position={currentPosition} onChange={handleMarkerDrag} />
+                    <ChangeMapCenter center={currentPosition} />
+                  </>
+                )}
+              </MapContainer>
             </div>
           </div>
 
-          <div className="mt-6 border-t border-command-border pt-4">
-            <h4 className="text-xs font-semibold text-gray-400 mb-2">Real-time Connection Status</h4>
-            <div className="rounded-lg bg-command-bg p-3 border border-command-border space-y-2">
-              <div className="flex justify-between text-xs">
-                <span className="text-command-muted">WebSocket:</span>
-                <span className={connected ? 'text-command-success font-semibold' : 'text-command-danger font-semibold'}>
-                  {connected ? 'Connected' : 'Disconnected'}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-command-muted">Live Mode:</span>
-                <span className="text-white font-medium">{status?.live_mode ? 'ENABLED' : 'DISABLED'}</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-command-muted">Auto Replay:</span>
-                <span className="text-white font-medium">
-                  {status?.live_replay_enabled ? `ON (${status?.refresh_interval_seconds}s)` : 'OFF'}
-                </span>
-              </div>
-            </div>
+          <div className="mt-4 space-y-3 pt-4 border-t border-command-border">
+            <button
+              type="button"
+              onClick={handleGenerateRandom}
+              className="w-full flex items-center justify-center gap-2 rounded-lg border border-command-border bg-command-bg py-2.5 text-xs font-medium text-white hover:bg-white/5 transition-colors"
+            >
+              <span className="text-command-warning text-sm">⚙</span>
+              Generate Random Bengaluru Data
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSendDemo}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-2 rounded-lg bg-command-success py-2.5 text-xs font-semibold text-white hover:opacity-90 transition-opacity disabled:opacity-50"
+            >
+              <span className="text-sm">⚡</span>
+              Send Live Demo Violation
+            </button>
           </div>
         </div>
       </div>
@@ -363,7 +482,7 @@ export default function LiveViolationReporter() {
 
         {recentReports.length === 0 ? (
           <p className="text-sm text-command-muted text-center py-6">
-            No live events ingested in this session yet. Submit the form above to see live updates.
+            No live events ingested in this session yet. Use the map or submit the form above to see live updates.
           </p>
         ) : (
           <div className="overflow-x-auto">

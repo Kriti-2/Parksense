@@ -8,6 +8,7 @@ const officerNav = [
   { to: '/corridors', label: 'Corridors', icon: '⬡' },
   { to: '/shift-planner', label: 'Shift Planner', icon: '📅' },
   { to: '/reporter', label: 'Live Reporter', icon: '⚡' },
+  { to: '/monitor', label: 'CCTV Monitor', icon: '🎥' },
 ];
 
 export default function Sidebar() {

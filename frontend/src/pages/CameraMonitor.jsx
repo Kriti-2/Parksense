@@ -87,6 +87,7 @@ export default function CameraMonitor() {
 
   // References to the HTML5 video tags
   const videoRefs = useRef({});
+  const sharedCanvasRef = useRef(null);
 
   // Real-time TensorFlow.js Model states
   const [tfStatus, setTfStatus] = useState('initializing'); // initializing, loading_model, active, fallback
@@ -197,14 +198,36 @@ export default function CameraMonitor() {
       const allowedClasses = ['car', 'bus', 'truck'];
       const nextDetections = {};
 
+      // Initialize the shared canvas once
+      if (typeof document !== 'undefined' && !sharedCanvasRef.current) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 320;
+        canvas.height = 180;
+        sharedCanvasRef.current = canvas;
+      }
+      const canvas = sharedCanvasRef.current;
+      const ctx = canvas ? canvas.getContext('2d') : null;
+
       try {
-        await Promise.all(CAMERAS.map(async (cam) => {
+        // Run sequentially across cameras to prevent concurrent WebGL context/GPU upload overload
+        for (const cam of CAMERAS) {
+          if (!isLoopActive) break;
           const video = videoRefs.current[cam.id];
           if (video && video.readyState >= 2 && video.videoWidth > 0 && video.videoHeight > 0) {
             try {
-              const predictions = await model.detect(video);
-              const vW = video.videoWidth;
-              const vH = video.videoHeight;
+              let predictions = [];
+              const vW = 320;
+              const vH = 180;
+
+              if (canvas && ctx) {
+                // Resize video frame to 320x180 on our offscreen canvas
+                ctx.drawImage(video, 0, 0, vW, vH);
+                predictions = await model.detect(canvas);
+              } else {
+                // Fallback to video directly if canvas not available
+                predictions = await model.detect(video);
+              }
+
               const isCam3 = cam.id === 'CAM-03';
               
               // Set strict size boundaries to filter out false positive giant/grouped boxes
@@ -265,7 +288,7 @@ export default function CameraMonitor() {
               // Ignore single camera processing errors
             }
           }
-        }));
+        }
 
         setRealDetections(nextDetections);
       } catch (err) {
@@ -274,7 +297,7 @@ export default function CameraMonitor() {
 
       // Schedule next frame with breathing space for browser rendering
       if (isLoopActive) {
-        setTimeout(runInference, 350);
+        setTimeout(runInference, 400);
       }
     };
 

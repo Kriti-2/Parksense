@@ -47,6 +47,13 @@ def get_current_user(
         )
     user = db.query(User).filter(User.email == payload["sub"], User.is_active.is_(True)).first()
     if not user:
+        if payload["sub"] == settings.officer_username:
+            return User(
+                id=0,
+                email=settings.officer_username,
+                full_name="Config Officer",
+                role=UserRole.OFFICER,
+            )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
@@ -68,7 +75,15 @@ def get_optional_user(
     payload = decode_access_token(credentials.credentials)
     if not payload or "sub" not in payload:
         return None
-    return db.query(User).filter(User.email == payload["sub"], User.is_active.is_(True)).first()
+    user = db.query(User).filter(User.email == payload["sub"], User.is_active.is_(True)).first()
+    if not user and payload["sub"] == settings.officer_username:
+        return User(
+            id=0,
+            email=settings.officer_username,
+            full_name="Config Officer",
+            role=UserRole.OFFICER,
+        )
+    return user
 
 
 def require_officer(user: User = Depends(get_current_user)) -> User:

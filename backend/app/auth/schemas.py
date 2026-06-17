@@ -14,7 +14,8 @@ class UserRegister(BaseModel):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: str | None = None
+    username: str | None = None
     password: str
 
 

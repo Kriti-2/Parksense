@@ -48,12 +48,34 @@ def register(payload: UserRegister, db: Session = Depends(get_db)):
 @router.post("/login", response_model=TokenResponse)
 def login(payload: UserLogin, db: Session = Depends(get_db)):
     """Email/password login for users and officers."""
-    user = db.query(User).filter(User.email == payload.email.lower()).first()
-    if not user or not verify_password(payload.password, user.hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account disabled")
-    return _token_response(user)
+    identifier = payload.email or payload.username
+    if not identifier:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email or username is required")
+
+    # 1. Try database auth
+    user = db.query(User).filter(User.email == identifier.lower()).first()
+    if user:
+        if not verify_password(payload.password, user.hashed_password):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        if not user.is_active:
+            raise HTTPException(status_code=403, detail="Account disabled")
+        return _token_response(user)
+
+    # 2. Fall back to configuration-based auth (for unit tests / legacy integration)
+    settings = get_settings()
+    if identifier == settings.officer_username and payload.password == settings.officer_password:
+        token = create_access_token({"sub": settings.officer_username, "role": "officer"})
+        return TokenResponse(
+            access_token=token,
+            role="officer",
+            expires_in_minutes=settings.jwt_expire_minutes,
+            email=f"{settings.officer_username}@parksense.local",
+            full_name="Config Officer",
+        )
+
+    # 3. If neither, unauthorized
+    raise HTTPException(status_code=401, detail="Invalid credentials")
+
 
 
 @router.post("/ingest-token", response_model=TokenResponse)

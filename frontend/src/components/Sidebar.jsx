@@ -6,6 +6,7 @@ const officerNav = [
   { to: '/predict', label: 'Predict', icon: '◎' },
   { to: '/analytics', label: 'Analytics', icon: '▤' },
   { to: '/corridors', label: 'Corridors', icon: '⬡' },
+  { to: '/shift-planner', label: 'Shift Planner', icon: '📅' },
   { to: '/reporter', label: 'Live Reporter', icon: '⚡' },
 ];
 

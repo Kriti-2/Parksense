@@ -21,6 +21,7 @@ export default function Corridors() {
   const [recidivism, setRecidivism] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastTick, setLastTick] = useState(null);
+  const [routesData, setRoutesData] = useState({});
 
   const handleLiveTick = useCallback((payload) => {
     if (payload.type !== 'live_tick') return;
@@ -40,6 +41,39 @@ export default function Corridors() {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (!corridors?.corridors) return;
+
+    corridors.corridors.forEach((corridor) => {
+      if (routesData[corridor.id]) return;
+
+      const routeCoords = corridor.waypoints?.map(([lat, lon]) => `${lon},${lat}`).join(';');
+      if (!routeCoords) return;
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${routeCoords}?overview=full&geometries=geojson&alternatives=true`;
+      
+      fetch(url)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.routes && data.routes.length > 0) {
+            const primaryRoute = data.routes[0].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+            let alternativeRoute = null;
+            if (data.routes.length > 1) {
+              alternativeRoute = data.routes[1].geometry.coordinates.map(([lon, lat]) => [lat, lon]);
+            }
+            setRoutesData((prev) => ({
+              ...prev,
+              [corridor.id]: {
+                primary: primaryRoute,
+                alternative: alternativeRoute,
+              },
+            }));
+          }
+        })
+        .catch((err) => console.error(`Failed to fetch route for corridor ${corridor.id}:`, err));
+    });
+  }, [corridors, routesData]);
 
   if (loading) {
     return <div className="text-center text-gray-400">Loading corridor data...</div>;
@@ -63,23 +97,59 @@ export default function Corridors() {
         <MapContainer center={BENGALURU_CENTER} zoom={12} style={{ height: '100%' }}>
           <TileLayer url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" />
           {corridorList.map((corridor) => {
-            const coords = corridor.waypoints?.map(([lat, lon]) => [lat, lon]) || [];
+            const route = routesData[corridor.id];
+            const primaryCoords = route?.primary || corridor.waypoints || [];
+            const alternativeCoords = route?.alternative;
+
             return (
-              <Polyline
-                key={corridor.id}
-                positions={coords}
-                pathOptions={{
-                  color: corridorColors[corridor.status] || '#3b82f6',
-                  weight: 5,
-                  opacity: 0.8,
-                }}
-              >
-                <Popup>
-                  <strong>{corridor.name}</strong>
-                  <br />
-                  Status: {corridor.status}
-                </Popup>
-              </Polyline>
+              <div key={corridor.id}>
+                {/* Primary Route */}
+                <Polyline
+                  positions={primaryCoords}
+                  pathOptions={{
+                    color: corridorColors[corridor.status] || '#3b82f6',
+                    weight: corridor.status === 'BLOCKED' ? 6 : 5,
+                    opacity: 0.85,
+                    dashArray: corridor.status === 'BLOCKED' ? '5, 8' : undefined,
+                  }}
+                >
+                  <Popup>
+                    <div className="text-sm font-semibold text-white">
+                      {corridor.name}
+                    </div>
+                    <div className="text-xs mt-1 text-gray-300">
+                      Status: <span className="font-bold" style={{ color: corridorColors[corridor.status] }}>{corridor.status}</span>
+                    </div>
+                    {corridor.status === 'BLOCKED' && (
+                      <div className="text-xs mt-1 text-command-success font-semibold">
+                        ⚠️ Alternative route calculated and suggested (green).
+                      </div>
+                    )}
+                  </Popup>
+                </Polyline>
+
+                {/* Alternative Route (if primary is blocked) */}
+                {corridor.status === 'BLOCKED' && alternativeCoords && (
+                  <Polyline
+                    positions={alternativeCoords}
+                    pathOptions={{
+                      color: '#10b981',
+                      weight: 5,
+                      opacity: 0.9,
+                      dashArray: '10, 8',
+                    }}
+                  >
+                    <Popup>
+                      <div className="text-sm font-semibold text-white">
+                        Suggested Alternative Corridor Route
+                      </div>
+                      <div className="text-xs mt-1 text-command-success font-semibold">
+                        Bypasses blocked bottlenecks on {corridor.name}
+                      </div>
+                    </Popup>
+                  </Polyline>
+                )}
+              </div>
             );
           })}
           {corridorList.map((corridor) =>

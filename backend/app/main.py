@@ -15,6 +15,7 @@ from app.database import SessionLocal, init_db
 from app.routes import (
     analytics,
     auth,
+    chat,
     corridors,
     heatmap,
     jobs,
@@ -132,6 +133,7 @@ def create_app() -> FastAPI:
     )
 
     app.include_router(auth.router)
+    app.include_router(chat.router)
     app.include_router(heatmap.router)
     app.include_router(analytics.router)
     app.include_router(predictions.router)

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import ThemeToggle from '../components/ThemeToggle';
+import ChatBot from '../components/ChatBot';
 
 export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -41,6 +42,7 @@ export default function DashboardLayout({ children }) {
           {children || <Outlet />}
         </div>
       </main>
+      <ChatBot />
     </div>
   );
 }

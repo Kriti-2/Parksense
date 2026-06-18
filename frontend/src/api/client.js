@@ -34,6 +34,7 @@ export const api = {
   getLiveStatus: () => client.get('/live/status'),
   ingestViolation: (data) => client.post('/ingest/violation', data),
   getChallans: (vehicleNumber) => client.get(`/public/challan-lookup/${vehicleNumber}`),
+  chat: (data) => client.post('/chat/', data),
 };
 
 export const getGoogleOAuthUrl = () => `${API_BASE}/auth/google/login`;

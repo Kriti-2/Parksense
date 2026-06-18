@@ -14,7 +14,6 @@ import Register from './pages/Register';
 import AuthCallback from './pages/AuthCallback';
 import UserCongestion from './pages/UserCongestion';
 import UserLayout from './layouts/UserLayout';
-import CustomCursor from './components/CustomCursor';
 
 
 function CorridorsRoute() {
@@ -36,7 +35,6 @@ function CorridorsRoute() {
 export default function App() {
   return (
     <AuthProvider>
-      <CustomCursor />
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />

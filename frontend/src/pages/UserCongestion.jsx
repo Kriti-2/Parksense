@@ -23,9 +23,97 @@ function FitRouteBounds({ route }) {
   return null;
 }
 
+function ComplianceRing({ score }) {
+  const radius = 30;
+  const strokeWidth = 5;
+  const normalizedRadius = radius - strokeWidth * 2;
+  const circumference = normalizedRadius * 2 * Math.PI;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center h-16 w-16 shrink-0">
+      <svg className="h-16 w-16 transform -rotate-90">
+        <circle
+          className="text-command-border stroke-current"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          r={normalizedRadius}
+          cx="32"
+          cy="32"
+        />
+        <circle
+          className="text-command-success stroke-current transition-all duration-500"
+          strokeWidth={strokeWidth}
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          fill="transparent"
+          r={normalizedRadius}
+          cx="32"
+          cy="32"
+        />
+      </svg>
+      <div className="absolute text-center">
+        <span className="text-xs font-extrabold text-gray-800">{score}%</span>
+      </div>
+    </div>
+  );
+}
+
+function CarbonTree({ savings }) {
+  const leafCount = Math.min(12, Math.max(3, Math.floor(savings * 3.5)));
+  
+  const leafPositions = [
+    { cx: 50, cy: 30, r: 9, color: '#486E5D' },
+    { cx: 38, cy: 38, r: 11, color: '#52B788' },
+    { cx: 62, cy: 38, r: 11, color: '#486E5D' },
+    { cx: 45, cy: 25, r: 10, color: '#9FC9BA' },
+    { cx: 55, cy: 25, r: 10, color: '#52B788' },
+    { cx: 30, cy: 45, r: 9, color: '#C0E1D2' },
+    { cx: 70, cy: 45, r: 9, color: '#486E5D' },
+    { cx: 42, cy: 48, r: 8, color: '#9FC9BA' },
+    { cx: 58, cy: 48, r: 8, color: '#52B788' },
+    { cx: 50, cy: 15, r: 7, color: '#C0E1D2' },
+    { cx: 32, cy: 32, r: 7, color: '#486E5D' },
+    { cx: 68, cy: 32, r: 7, color: '#9FC9BA' },
+  ];
+
+  const visibleLeaves = leafPositions.slice(0, leafCount);
+
+  return (
+    <svg className="h-16 w-16 shrink-0 transition-all duration-500" viewBox="0 0 100 100">
+      <path d="M20 80 Q50 76 80 80" stroke="#E5EEE4" strokeWidth="2" fill="none" />
+      <path d="M48 80 L48 52 Q48 48 42 43 L45 43 Q49 48 49 52 L51 52 Q51 45 56 41 L58 42 Q53 48 51 52 L51 80 Z" fill="#8B5E3C" />
+      {visibleLeaves.map((leaf, index) => (
+        <circle
+          key={index}
+          cx={leaf.cx}
+          cy={leaf.cy}
+          r={leaf.r}
+          fill={leaf.color}
+          className="transition-all duration-500 transform origin-bottom animate-pulse"
+          style={{ animationDelay: `${index * 120}ms` }}
+        />
+      ))}
+      {savings >= 3.0 && (
+        <>
+          <circle cx="50" cy="30" r="3.5" fill="#DC9B9B" className="animate-ping" />
+          <circle cx="38" cy="38" r="3.5" fill="#DC9B9B" className="animate-ping" style={{ animationDelay: '300ms' }} />
+          <circle cx="62" cy="38" r="3.5" fill="#DC9B9B" className="animate-ping" style={{ animationDelay: '600ms' }} />
+        </>
+      )}
+    </svg>
+  );
+}
+
 export default function UserCongestion() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  // Cumulative eco gamification states
+  const [totalSavings, setTotalSavings] = useState(1.4); // baseline starting offset (kg)
+  const [totalFuelSaved, setTotalFuelSaved] = useState(0.55); // baseline starting fuel (L)
+  const [totalTimeSaved, setTotalTimeSaved] = useState(15); // baseline time saved (mins)
 
   // Routing state
   const [origin, setOrigin] = useState('Silk Board Junction');
@@ -114,6 +202,11 @@ export default function UserCongestion() {
       fuelSaved,
       fuelPct
     });
+
+    // Accumulate metrics dynamically on click!
+    setTotalSavings((prev) => parseFloat((prev + parseFloat(co2Saved)).toFixed(2)));
+    setTotalFuelSaved((prev) => parseFloat((prev + parseFloat(fuelSaved)).toFixed(2)));
+    setTotalTimeSaved((prev) => prev + timeSaved);
   };
 
   if (loading) {
@@ -121,23 +214,57 @@ export default function UserCongestion() {
   }
 
   const zones = data?.zones || [];
-  const summary = data?.summary || {};
 
   return (
     <div className="space-y-6">
-      {/* Metrics Row */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-command-danger/30 bg-command-danger/5 p-4 text-center interactive-card shadow-sm">
-          <p className="text-2xl font-bold text-command-danger">{summary.avoid_zones || 0}</p>
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider text-command-muted">Avoid</p>
+      
+      {/* Gamified Metrics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Apple Activity compliance ring */}
+        <div className="rounded-xl border border-command-border bg-command-panel p-4 flex items-center gap-4 interactive-card shadow-sm">
+          <ComplianceRing score={Math.min(100, Math.round(totalSavings * 20))} />
+          <div className="text-left">
+            <h4 className="text-sm font-bold text-white uppercase tracking-wider">Compliance Ring</h4>
+            <p className="text-[10px] text-command-muted mt-0.5 leading-relaxed">Ratio of eco-smart commute selections</p>
+          </div>
         </div>
-        <div className="rounded-xl border border-command-warning/30 bg-command-warning/5 p-4 text-center interactive-card shadow-sm">
-          <p className="text-2xl font-bold text-command-warning">{summary.caution_zones || 0}</p>
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider text-command-muted">Caution</p>
+
+        {/* Card 2: Vector Carbon Tree */}
+        <div className="rounded-xl border border-command-border bg-command-panel p-4 flex items-center gap-4 interactive-card shadow-sm justify-between">
+          <div className="flex items-center gap-4">
+            <CarbonTree savings={totalSavings} />
+            <div className="text-left">
+              <h4 className="text-sm font-bold text-white uppercase tracking-wider">Smart Carbon Tree</h4>
+              <p className="text-[10px] text-command-muted mt-0.5 leading-relaxed">Grows new leaves as you save CO₂</p>
+            </div>
+          </div>
+          <span className="text-[8px] bg-command-success text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">
+            {totalSavings >= 3.0 ? 'Blooming 🌸' : 'Growing 🌱'}
+          </span>
         </div>
-        <div className="rounded-xl border border-command-success/30 bg-command-success/5 p-4 text-center interactive-card shadow-sm">
-          <p className="text-2xl font-bold text-command-success">{summary.clear_zones || 0}</p>
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-wider text-command-muted">Clear</p>
+
+        {/* Card 3: Total Impact offsets */}
+        <div className="rounded-xl border border-command-border bg-command-panel p-4 flex flex-col justify-between interactive-card shadow-sm min-h-[90px] text-left">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-command-muted font-bold uppercase tracking-wider text-[9px]">Cumulative Impact</span>
+            <span className="text-[9px] bg-command-accent/10 border border-command-accent/30 text-command-accent px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
+              {totalSavings >= 3.0 ? '🌿 Eco Champion' : '🌱 Green Driver'}
+            </span>
+          </div>
+          <div className="grid grid-cols-3 gap-1 mt-2 text-center text-[10px] font-bold text-gray-800 leading-tight">
+            <div className="bg-command-bg/40 p-1.5 rounded border border-command-border/30">
+              <span className="block text-command-success text-sm font-extrabold">{totalSavings}kg</span>
+              <span className="text-[8px] text-gray-500 font-semibold uppercase">CO₂ Offset</span>
+            </div>
+            <div className="bg-command-bg/40 p-1.5 rounded border border-command-border/30">
+              <span className="block text-command-success text-sm font-extrabold">{totalFuelSaved}L</span>
+              <span className="text-[8px] text-gray-500 font-semibold uppercase">Fuel Saved</span>
+            </div>
+            <div className="bg-command-bg/40 p-1.5 rounded border border-command-border/30">
+              <span className="block text-command-success text-sm font-extrabold">{totalTimeSaved}m</span>
+              <span className="text-[8px] text-gray-500 font-semibold uppercase">Time Saved</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -225,20 +352,20 @@ export default function UserCongestion() {
 
           {/* Trip Planner Control Card */}
           <div className="rounded-xl border border-command-border bg-command-panel p-5 shadow-sm space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-left">
               <span className="text-lg">🧭</span>
               <div>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider">Eco-Smart Trip Planner</h3>
                 <p className="text-[10px] text-command-muted font-medium">Bypass congested gridlock and reduce CO2 emissions automatically</p>
               </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
               <div>
                 <label className="text-[10px] font-bold text-command-muted uppercase tracking-wider block mb-1">Start Hub</label>
                 <select 
                   value={origin} 
                   onChange={(e) => setOrigin(e.target.value)}
-                  className="w-full bg-command-bg border border-command-border rounded-lg px-3 py-2 text-xs text-gray-800 focus:outline-none"
+                  className="w-full bg-command-bg border border-command-border rounded-lg px-3 py-2 text-xs text-gray-800 focus:outline-none cursor-pointer"
                 >
                   {LOCATIONS.map(l => (
                     <option key={l.name} value={l.name}>{l.name}</option>
@@ -250,7 +377,7 @@ export default function UserCongestion() {
                 <select 
                   value={destination} 
                   onChange={(e) => setDestination(e.target.value)}
-                  className="w-full bg-command-bg border border-command-border rounded-lg px-3 py-2 text-xs text-gray-800 focus:outline-none"
+                  className="w-full bg-command-bg border border-command-border rounded-lg px-3 py-2 text-xs text-gray-800 focus:outline-none cursor-pointer"
                 >
                   {LOCATIONS.filter(l => l.name !== origin).map(l => (
                     <option key={l.name} value={l.name}>{l.name}</option>
@@ -271,7 +398,7 @@ export default function UserCongestion() {
         <div className="space-y-6">
           {routeDetails && (
             <div className="rounded-xl border border-command-success/30 bg-command-success/5 p-5 shadow-sm space-y-4 animate-slideIn">
-              <div className="flex items-center justify-between border-b border-command-success/20 pb-3">
+              <div className="flex items-center justify-between border-b border-command-success/20 pb-3 text-left">
                 <h3 className="text-xs font-bold text-command-success uppercase tracking-wider">🌱 Eco-Smart Impact</h3>
                 <span className="text-[9px] bg-command-success text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider">Optimal</span>
               </div>
@@ -294,7 +421,7 @@ export default function UserCongestion() {
                 </div>
               </div>
               
-              <div className="text-xs space-y-2 text-gray-700 bg-white/50 p-3 rounded-lg border border-command-border/20">
+              <div className="text-xs space-y-2 text-gray-700 bg-white/50 p-3 rounded-lg border border-command-border/20 text-left">
                 <div className="flex justify-between">
                   <span className="text-command-muted font-medium">Eco Route:</span>
                   <span className="font-semibold text-gray-800">{routeDetails.ecoDist} km · {routeDetails.ecoTime}m</span>
@@ -310,7 +437,7 @@ export default function UserCongestion() {
             </div>
           )}
 
-          <div className="space-y-3">
+          <div className="space-y-3 text-left">
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">Zone Advisories</h2>
             {zones.map((zone) => (
               <div

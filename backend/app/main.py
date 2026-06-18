@@ -85,23 +85,26 @@ async def lifespan(app: FastAPI):
 
     get_realtime_engine().tick()
 
-    scheduler.add_job(_refresh_data_cache, "interval", hours=6, id="data_refresh")
-    scheduler.add_job(
-        _live_tick,
-        "interval",
-        seconds=settings.live_refresh_seconds,
-        id="live_tick",
-    )
-    scheduler.start()
-    logger.info(
-        "APScheduler started (live refresh every %ds)",
-        settings.live_refresh_seconds,
-    )
+    import os
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        scheduler.add_job(_refresh_data_cache, "interval", hours=6, id="data_refresh")
+        scheduler.add_job(
+            _live_tick,
+            "interval",
+            seconds=settings.live_refresh_seconds,
+            id="live_tick",
+        )
+        scheduler.start()
+        logger.info(
+            "APScheduler started (live refresh every %ds)",
+            settings.live_refresh_seconds,
+        )
 
     yield
 
-    scheduler.shutdown(wait=False)
-    logger.info("Shutdown complete")
+    if not os.getenv("PYTEST_CURRENT_TEST"):
+        scheduler.shutdown(wait=False)
+        logger.info("Shutdown complete")
 
 
 def create_app() -> FastAPI:

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
+import { useAudioAlerts } from '../hooks/useAudioAlerts';
 import KPICard from '../components/KPICard';
 import HeatMap from '../components/HeatMap';
 import CongestionDebt from '../components/CongestionDebt';
@@ -11,6 +12,7 @@ import RecidivismMap from '../components/RecidivismMap';
 import TimeLapse from '../components/TimeLapse';
 import LiveStatusBar from '../components/LiveStatusBar';
 import WeatherBanner from '../components/WeatherBanner';
+import AudioAlertControls from '../components/AudioAlertControls';
 
 function formatINR(amount) {
   if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
@@ -18,6 +20,12 @@ function formatINR(amount) {
 }
 
 export default function Dashboard() {
+  const audioHook = useAudioAlerts();
+  // Stable ref to play() — lets handleLiveTick keep [] deps without stale closures
+  const playRef = useRef(audioHook.play);
+  useEffect(() => { playRef.current = audioHook.play; }, [audioHook.play]);
+  const lastAlertTypeRef = useRef(null);
+
   const [heatmap, setHeatmap] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [predictions, setPredictions] = useState(null);
@@ -30,6 +38,11 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Sparkline history state arrays for live updates
+  const [violationsLastHourHistory, setViolationsLastHourHistory] = useState([12, 16, 14, 19, 15, 23, 18, 20]);
+  const [activeHotspotsHistory, setActiveHotspotsHistory] = useState([2, 1, 3, 2, 4, 3, 2, 3]);
+  const [avgCongestionHistory, setAvgCongestionHistory] = useState([38, 42, 40, 45, 41, 48, 44, 46]);
+
   const handleLiveTick = useCallback((payload) => {
     if (payload.type !== 'live_tick') return;
     setLastTick(payload);
@@ -38,11 +51,45 @@ export default function Dashboard() {
       setHeatmap((prev) =>
         prev ? { ...prev, zone_intensity: payload.zone_intensity, generated_at: payload.timestamp } : prev
       );
+
+      // Update active hotspots history
+      const activeCount = Object.values(payload.zone_intensity || {}).filter(
+        (z) => z.congestion_score >= 50
+      ).length;
+      setActiveHotspotsHistory((prev) => [...prev.slice(-9), activeCount]);
+
+      // Update avg congestion history
+      const intensities = Object.values(payload.zone_intensity);
+      const avgScore = intensities.length > 0
+        ? intensities.reduce((s, z) => s + z.congestion_score, 0) / intensities.length
+        : 40;
+      setAvgCongestionHistory((prev) => [...prev.slice(-9), Math.round(avgScore)]);
+
+      // 🔊 Audio alerts based on congestion thresholds
+      const maxScore = intensities.length > 0
+        ? Math.max(...intensities.map((z) => z.congestion_score))
+        : 0;
+      if (maxScore >= 80) {
+        lastAlertTypeRef.current = 'critical';
+        playRef.current('critical');
+      } else if (activeCount >= 3) {
+        lastAlertTypeRef.current = 'warning';
+        playRef.current('warning');
+      } else {
+        lastAlertTypeRef.current = 'info';
+        playRef.current('info');
+      }
     }
     if (payload.corridors) {
       setCorridors(payload.corridors);
     }
     if (payload.severity_queue) {
+      // 🔊 Fire critical alert if a CRITICAL violation appears
+      const hasCritical = (payload.severity_queue || []).some((q) => q.severity === 'CRITICAL');
+      if (hasCritical) {
+        lastAlertTypeRef.current = 'critical';
+        playRef.current('critical');
+      }
       setSeverity((prev) => ({
         ...(prev || {}),
         queue: payload.severity_queue,
@@ -64,6 +111,11 @@ export default function Dashboard() {
             }
           : prev
       );
+
+      // Update last hour violations history
+      if (payload.kpis.violations_last_hour !== undefined) {
+        setViolationsLastHourHistory((prev) => [...prev.slice(-9), payload.kpis.violations_last_hour]);
+      }
     }
   }, []);
 
@@ -129,7 +181,10 @@ export default function Dashboard() {
             Live Bengaluru parking congestion — real violations + traffic intelligence
           </p>
         </div>
-        <LiveStatusBar connected={connected} status={status} lastTick={lastTick} />
+        <div className="flex items-center gap-3">
+          <AudioAlertControls audioHook={audioHook} lastAlertRef={lastAlertTypeRef} />
+          <LiveStatusBar connected={connected} status={status} lastTick={lastTick} />
+        </div>
       </div>
 
       <WeatherBanner
@@ -178,24 +233,28 @@ export default function Dashboard() {
               title="Total Violations"
               value={kpis.total_violations?.toLocaleString('en-IN') || '—'}
               subtitle="Bengaluru police dataset"
+              sparklineData={analytics?.violation_trends?.map((t) => t.violations) || []}
               variant="accent"
             />
             <KPICard
               title="Active Hotspots"
               value={kpis.active_hotspots || 0}
               subtitle="Live congestion ≥ 50"
+              sparklineData={activeHotspotsHistory}
               variant="warning"
             />
             <KPICard
               title="Violations (1h)"
               value={lastTick?.kpis?.violations_last_hour ?? '—'}
               subtitle="Rolling live window"
+              sparklineData={violationsLastHourHistory}
               variant="danger"
             />
             <KPICard
               title="Avg Congestion Score"
               value={kpis.avg_congestion_score || 0}
               subtitle="Traffic + violation signal"
+              sparklineData={avgCongestionHistory}
               variant="default"
             />
           </div>

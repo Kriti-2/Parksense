@@ -14,6 +14,19 @@ def auth_client(monkeypatch):
     monkeypatch.setenv("OFFICER_PASSWORD", "test-pass")
     monkeypatch.setenv("INGEST_USERNAME", "btp-ingest")
     monkeypatch.setenv("INGEST_PASSWORD", "ingest-pass")
+    monkeypatch.setenv("WEATHER_API_KEY", "")
+    monkeypatch.setenv("TOMTOM_API_KEY", "")
+    monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "")
+    # Ensure test database starts clean
+    from pathlib import Path
+    test_db_path = Path(__file__).resolve().parent.parent / "data" / "test.db"
+    if test_db_path.exists():
+        try:
+            test_db_path.unlink()
+        except Exception:
+            pass
+
+    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{test_db_path}")
 
     from app.config import get_settings
 

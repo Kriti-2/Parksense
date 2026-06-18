@@ -1,15 +1,16 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function DashboardLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-command-bg">
+    <div className="flex min-h-screen bg-command-bg transition-colors duration-300">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex items-center gap-4 justify-between border-b border-command-border bg-command-panel px-6 md:px-8 py-5 shadow-sm">
+        <header className="flex items-center gap-4 justify-between border-b border-command-border bg-command-panel px-6 md:px-8 py-5 shadow-sm transition-colors duration-300">
           <div className="flex items-center gap-3">
             {/* Hamburger button on mobile */}
             <button
@@ -29,13 +30,14 @@ export default function DashboardLayout({ children }) {
             </div>
           </div>
           <div className="flex items-center gap-4 text-xs font-semibold text-command-muted">
-            <span className="flex items-center gap-1.5">
+            <ThemeToggle />
+            <span className="flex items-center gap-1.5 border border-command-border bg-command-panel px-3 py-1.5 rounded-xl shadow-sm">
               <span className="h-2 w-2 rounded-full bg-command-success animate-pulse"></span>
               <span className="hidden sm:inline">Live Feed</span>
             </span>
           </div>
         </header>
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-command-bg transition-colors duration-300">
           {children || <Outlet />}
         </div>
       </main>

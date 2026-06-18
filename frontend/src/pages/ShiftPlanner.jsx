@@ -258,24 +258,28 @@ export default function ShiftPlannerPage() {
           title="Optimal Dispatch"
           value={summary.total_officers_recommended || 0}
           subtitle="Total recommended staff"
+          sparklineData={assignments.map((a) => a.officers_recommended || 0)}
           variant="accent"
         />
         <KPICard
           title="Economic Delay Risk"
           value={formatINR(summary.total_economic_impact_inr)}
           subtitle="Projected gridlock cost"
+          sparklineData={assignments.map((a) => a.economic_impact_inr || 0)}
           variant="danger"
         />
         <KPICard
           title="Critical Intersections"
           value={summary.critical_zones || 0}
           subtitle={`High priority: ${summary.high_priority_zones || 0}`}
+          sparklineData={assignments.map((a) => (a.priority === 'CRITICAL' ? 3 : a.priority === 'HIGH' ? 2 : 1))}
           variant="warning"
         />
         <KPICard
           title="Projected Violations"
           value={summary.total_expected_violations || 0}
           subtitle="Estimated offenses (24h)"
+          sparklineData={assignments.map((a) => a.expected_violations || 0)}
           variant="default"
         />
       </div>

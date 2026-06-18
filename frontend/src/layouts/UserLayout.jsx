@@ -4,6 +4,7 @@ import { useLiveFeed } from '../hooks/useLiveFeed';
 import { useState, useCallback } from 'react';
 import LiveStatusBar from '../components/LiveStatusBar';
 import NoticesBanner from '../components/NoticesBanner';
+import ThemeToggle from '../components/ThemeToggle';
 
 export default function UserLayout({ children }) {
   const { user, logout } = useAuth();
@@ -24,9 +25,9 @@ export default function UserLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-command-bg">
+    <div className="min-h-screen bg-command-bg transition-colors duration-300">
       <NoticesBanner />
-      <header className="border-b border-command-border bg-command-panel px-6 py-4">
+      <header className="border-b border-command-border bg-command-panel px-6 py-4 transition-colors duration-300">
         <div className="mx-auto flex max-w-6xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-command-accent text-lg font-bold text-white">
@@ -41,7 +42,7 @@ export default function UserLayout({ children }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-4">
-            <nav className="flex gap-2 rounded-xl bg-command-bg p-1.5 border border-command-border/50">
+            <nav className="flex gap-2 rounded-xl bg-command-bg p-1.5 border border-command-border/50 transition-colors duration-300">
               <NavLink
                 to="/congestion"
                 className={({ isActive }) =>
@@ -74,6 +75,7 @@ export default function UserLayout({ children }) {
               </NavLink>
             </nav>
 
+            <ThemeToggle />
             <LiveStatusBar connected={connected} status={status} lastTick={lastTick} />
             
             <button

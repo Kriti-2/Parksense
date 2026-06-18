@@ -1,14 +1,40 @@
 @import "tailwindcss";
 
 @theme {
-  --color-command-bg: #F6F4E8;
-  --color-command-panel: #FFFFFF;
-  --color-command-border: #E5EEE4;
-  --color-command-accent: #486E5D;
-  --color-command-warning: #D29C42;
-  --color-command-danger: #C27A7A;
-  --color-command-success: #486E5D;
-  --color-command-muted: #6B7C73;
+  --color-command-bg: var(--command-bg);
+  --color-command-panel: var(--command-panel);
+  --color-command-border: var(--command-border);
+  --color-command-accent: var(--command-accent);
+  --color-command-warning: var(--command-warning);
+  --color-command-danger: var(--command-danger);
+  --color-command-success: var(--command-success);
+  --color-command-muted: var(--command-muted);
+}
+
+:root {
+  --command-bg: #F6F4E8;
+  --command-panel: #FFFFFF;
+  --command-border: #E5EEE4;
+  --command-accent: #486E5D;
+  --command-warning: #D29C42;
+  --command-danger: #C27A7A;
+  --command-success: #486E5D;
+  --command-muted: #6B7C73;
+  --command-text: #2F3E46;
+  --command-title: #1F2925;
+}
+
+.dark {
+  --command-bg: #1C1917;
+  --command-panel: #292524;
+  --command-border: #3E3A38;
+  --command-accent: #D97706;
+  --command-warning: #F59E0B;
+  --command-danger: #EF4444;
+  --command-success: #10B981;
+  --command-muted: #A8A29E;
+  --command-text: #F5F5F4;
+  --command-title: #FFFFFF;
 }
 
 * {
@@ -18,15 +44,16 @@
 body {
   margin: 0;
   font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-  background: var(--color-command-bg);
-  color: #2F3E46;
+  background: var(--command-bg);
+  color: var(--command-text);
   min-height: 100vh;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .leaflet-container {
   width: 100%;
   height: 100%;
-  background: #E5EEE4;
+  background: var(--command-border);
   border-radius: 0.75rem;
   border: 1px solid rgba(80, 114, 100, 0.15);
 }
@@ -37,17 +64,18 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #F6F4E8;
+  background: var(--command-bg);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #C0E1D2;
+  background: var(--command-muted);
   border-radius: 3px;
+  opacity: 0.5;
 }
 
 /* Micro-animations and hover transitions for premium interactivity */
 .interactive-card {
-  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s ease, background-color 0.3s ease;
 }
 
 .interactive-card:hover {
@@ -69,41 +97,66 @@ body {
   transform: translateY(0);
 }
 
-/* Smart overrides to keep existing markup readable on light backgrounds */
+/* Smart overrides to keep existing markup readable on light/dark backgrounds */
 .bg-command-panel h1, .bg-command-panel h2, .bg-command-panel h3, .bg-command-panel h4,
 .bg-command-bg h1, .bg-command-bg h2, .bg-command-bg h3, .bg-command-bg h4 {
-  color: #1F2925 !important;
+  color: var(--command-title) !important;
 }
 
-/* Override text-white inside panels/bg to be dark slate, unless it is inside a colored pill/button */
+/* Override text-white inside panels/bg to be dynamic, unless it is inside a colored pill/button */
 .bg-command-panel .text-white:not(.bg-command-accent *):not(.bg-command-danger *):not(.bg-command-success *):not(.bg-command-accent):not(.bg-command-danger):not(.bg-command-success):not(button):not(.text-white-keep),
 .bg-command-bg .text-white:not(.bg-command-accent *):not(.bg-command-danger *):not(.bg-command-success *):not(.bg-command-accent):not(.bg-command-danger):not(.bg-command-success):not(button):not(.text-white-keep) {
-  color: #1F2925 !important;
+  color: var(--command-title) !important;
 }
 
-/* Redefine grey text scales to be dark green/slate to maintain readability */
-.bg-command-panel .text-gray-400, .bg-command-bg .text-gray-400 {
+/* Redefine grey text scales to maintain readability - Light Mode */
+:not(.dark) .bg-command-panel .text-gray-400, :not(.dark) .bg-command-bg .text-gray-400 {
   color: #6B7C73 !important;
 }
-.bg-command-panel .text-gray-300, .bg-command-bg .text-gray-300 {
+:not(.dark) .bg-command-panel .text-gray-300, :not(.dark) .bg-command-bg .text-gray-300 {
   color: #4A5851 !important;
 }
-.bg-command-panel .text-gray-200, .bg-command-bg .text-gray-200 {
+:not(.dark) .bg-command-panel .text-gray-200, :not(.dark) .bg-command-bg .text-gray-200 {
   color: #354F52 !important;
 }
-.bg-command-panel .text-gray-500, .bg-command-bg .text-gray-500 {
+:not(.dark) .bg-command-panel .text-gray-500, :not(.dark) .bg-command-bg .text-gray-500 {
   color: #8A9B92 !important;
+}
+
+/* Redefine grey text scales for Dark Mode */
+.dark .bg-command-panel .text-gray-400, .dark .bg-command-bg .text-gray-400 {
+  color: #A8A29E !important;
+}
+.dark .bg-command-panel .text-gray-300, .dark .bg-command-bg .text-gray-300 {
+  color: #D6D3D1 !important;
+}
+.dark .bg-command-panel .text-gray-200, .dark .bg-command-bg .text-gray-200 {
+  color: #F5F5F4 !important;
+}
+.dark .bg-command-panel .text-gray-500, .dark .bg-command-bg .text-gray-500 {
+  color: #78716C !important;
+}
+
+/* Redefine background text scaling for dark mode */
+.dark .text-gray-800 {
+  color: var(--command-text) !important;
+}
+.dark .text-gray-600 {
+  color: var(--command-muted) !important;
+}
+.dark .text-gray-500 {
+  color: var(--command-muted) !important;
 }
 
 /* For Recharts labels/tooltips inside panels */
 .recharts-text {
-  fill: #4A5851 !important;
+  fill: var(--command-muted) !important;
 }
 .recharts-legend-item-text {
-  color: #4A5851 !important;
+  color: var(--command-muted) !important;
 }
 .recharts-tooltip-label {
-  color: #1F2925 !important;
+  color: var(--command-title) !important;
 }
 
 /* Custom Cursor styling for fine pointers */

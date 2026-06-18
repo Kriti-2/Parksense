@@ -52,7 +52,7 @@ class RealtimeEngine:
             subset=["id"], keep="last"
         )
 
-    def tick(self) -> dict[str, Any]:
+    def tick(self, manual_violation: dict | None = None) -> dict[str, Any]:
         """Run one live update cycle: replay violations, refresh traffic, rebuild live snapshots."""
         settings = get_settings()
         store = get_data_store()
@@ -61,6 +61,9 @@ class RealtimeEngine:
         new_violations = []
         if settings.live_replay_enabled:
             new_violations = buffer.replay_tick(count=settings.live_replay_batch_size)
+
+        if manual_violation:
+            new_violations.append(manual_violation)
 
         recent = self.recent_window(hours=24)
         speeds = _traffic_service.get_zone_speeds(recent)

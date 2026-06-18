@@ -65,6 +65,6 @@ async def ingest_violation(
             "created_datetime": datetime.utcnow(),
         }
     )
-    tick = get_realtime_engine().tick()
+    tick = get_realtime_engine().tick(manual_violation=row)
     await get_realtime_hub().broadcast(tick)
     return {"ingested": row, "live_tick": tick}

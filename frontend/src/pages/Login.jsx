@@ -63,7 +63,7 @@ export default function Login() {
   }
 
   return (
-    <div className="relative min-h-screen w-full overflow-y-auto flex flex-col items-center justify-center py-10 transition-colors duration-300 bg-slate-950">
+    <div className="relative min-h-screen w-full overflow-hidden flex flex-col items-center justify-center py-6 transition-colors duration-300 bg-slate-950">
       
       {/* 4K 60fps Loop Video Background (Autoplay, Loop, Muted, GPU-accelerated) */}
       <video
@@ -105,37 +105,37 @@ export default function Login() {
 
       {/* Centered High-Fidelity Login Card (GPU accelerated to avoid lag over 4K video) */}
       <div className="z-10 flex items-center justify-center px-4 w-full pointer-events-none">
-        <div className="w-full max-w-[370px] rounded-3xl border border-white/10 dark:border-teal-500/20 bg-white/[0.01] dark:bg-black/[0.05] px-9 py-10 text-white shadow-[0_20px_50px_rgba(0,0,0,0.3)] backdrop-blur-lg transition-all duration-300 transform-gpu will-change-transform pointer-events-auto">
+        <div className="w-full max-w-[360px] rounded-3xl border border-white/15 dark:border-teal-500/30 bg-slate-900/40 dark:bg-black/40 px-6 py-6.5 text-white shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.15)] backdrop-blur-2xl transition-all duration-300 transform-gpu will-change-transform pointer-events-auto hover:border-white/20 dark:hover:border-teal-500/50">
           
           {/* Logo, Header, and Pulsing Live Badge */}
-          <div className="mb-6 flex flex-col items-center text-center">
-            <div className="flex items-center justify-center gap-2 mb-1.5">
+          <div className="mb-4 flex flex-col items-center text-center">
+            <div className="flex items-center justify-center gap-2 mb-1">
               {/* Green Rounded Map-Pin Icon */}
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#1D9E75] shadow-lg shadow-[#1D9E75]/30">
-                <svg className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <div className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-[#1D9E75] shadow-lg shadow-[#1D9E75]/30">
+                <svg className="h-4.5 w-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
               </div>
-              <h1 className="text-2xl font-black tracking-tight text-white select-none">ParkSense AI</h1>
+              <h1 className="text-xl font-black tracking-tight text-white select-none">ParkSense AI</h1>
             </div>
             
             {/* Live Badge */}
-            <div className="flex items-center gap-1.5 rounded-full bg-teal-950/45 px-3 py-0.5 border border-teal-500/20">
-              <span className="relative flex h-2 w-2">
+            <div className="flex items-center gap-1.5 rounded-full bg-teal-950/45 px-2.5 py-0.5 border border-teal-500/20">
+              <span className="relative flex h-1.5 w-1.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-500"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-teal-400 select-none">Bengaluru · Live</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-teal-400 select-none">Bengaluru · Live</span>
             </div>
           </div>
 
           {/* Mode Selector Segmented Toggle */}
-          <div className="mb-5 flex rounded-2xl bg-white/[0.03] dark:bg-black/[0.1] p-1 border border-white/5">
+          <div className="mb-3.5 flex rounded-2xl bg-white/[0.03] dark:bg-black/[0.1] p-1 border border-white/5">
             <button
               type="button"
               onClick={() => setMode('user')}
-              className={`flex-1 rounded-xl py-2.5 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+              className={`flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
                 mode === 'user' 
                   ? 'border border-[rgba(29,158,117,0.4)] text-[#1D9E75] bg-[rgba(29,158,117,0.15)] shadow-sm' 
                   : 'text-gray-400 hover:text-white'
@@ -146,7 +146,7 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setMode('officer')}
-              className={`flex-1 rounded-xl py-2.5 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+              className={`flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
                 mode === 'officer' 
                   ? 'border border-[rgba(29,158,117,0.4)] text-[#1D9E75] bg-[rgba(29,158,117,0.15)] shadow-sm' 
                   : 'text-gray-400 hover:text-white'
@@ -157,14 +157,14 @@ export default function Login() {
           </div>
 
           {/* Subtext description */}
-          <p className="mb-4 text-center text-xs text-gray-300 dark:text-gray-400 font-semibold select-none leading-relaxed">
+          <p className="mb-3.5 text-center text-xs text-gray-300 dark:text-gray-400 font-semibold select-none leading-relaxed px-1">
             {mode === 'user' 
               ? 'Plan your commute — see congestion and parking hotspots before you travel.'
               : 'Command center access for Bengaluru traffic enforcement.'}
           </p>
 
           {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-4.5">
+          <form onSubmit={handleSubmit} className="space-y-3">
             <div>
               <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">Email</label>
               <input
@@ -172,20 +172,28 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="mt-1 w-full rounded-xl border border-white/10 dark:border-slate-800/80 bg-white/[0.02] dark:bg-black/[0.15] px-4 py-3 text-sm text-white outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#1D9E75]/20 transition-all duration-300 placeholder-gray-600"
+                className="mt-1 w-full rounded-xl border border-white/10 dark:border-slate-800/80 bg-white/[0.02] dark:bg-black/[0.15] px-4 py-2.5 text-sm text-white outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#1D9E75]/20 transition-all duration-300 placeholder-gray-600"
                 placeholder={mode === 'officer' ? 'officer@parksense.demo' : 'you@email.com'}
               />
             </div>
             
             <div>
-              <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">Password</label>
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 select-none">Password</label>
+                <button 
+                  type="button" 
+                  className="text-[9px] font-bold text-gray-400 hover:text-teal-400 hover:underline cursor-pointer bg-transparent border-none"
+                >
+                  Forgot password?
+                </button>
+              </div>
               <div className="relative mt-1">
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full rounded-xl border border-white/10 dark:border-slate-800/80 bg-white/[0.02] dark:bg-black/[0.15] px-4 py-3 pr-11 text-sm text-white outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#1D9E75]/20 transition-all duration-300"
+                  className="w-full rounded-xl border border-white/10 dark:border-slate-800/80 bg-white/[0.02] dark:bg-black/[0.15] px-4 py-2.5 pr-11 text-sm text-white outline-none focus:border-[#1D9E75] focus:ring-2 focus:ring-[#1D9E75]/20 transition-all duration-300"
                 />
                 {/* Visibility eye toggle */}
                 <button
@@ -213,7 +221,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full rounded-xl bg-[#1D9E75] py-3 font-bold uppercase text-[11px] tracking-widest text-white hover:opacity-95 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 cursor-pointer shadow-lg shadow-[#1D9E75]/25 mt-4"
+              className="w-full rounded-xl bg-[#1D9E75] py-2.5 font-bold uppercase text-[11px] tracking-widest text-white hover:opacity-95 active:scale-[0.99] transition-all duration-200 disabled:opacity-50 cursor-pointer shadow-lg shadow-[#1D9E75]/25 mt-2"
             >
               {loading 
                 ? 'Signing in...' 
@@ -227,7 +235,7 @@ export default function Login() {
           {mode === 'user' && (
             <a
               href={getGoogleOAuthUrl()}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 dark:border-slate-800/80 py-3 text-xs font-bold text-white bg-white/[0.03] hover:bg-white/10 transition-all cursor-pointer"
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 dark:border-slate-800/80 py-2.5 text-xs font-bold text-white bg-white/[0.03] hover:bg-white/10 transition-all cursor-pointer"
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -244,14 +252,14 @@ export default function Login() {
           <button
             type="button"
             onClick={fillDemo}
-            className="mt-4 w-full text-center text-xs text-[#1D9E75] hover:underline cursor-pointer bg-transparent border-none outline-none select-none font-bold"
+            className="mt-3 w-full text-center text-xs text-[#1D9E75] hover:underline cursor-pointer bg-transparent border-none outline-none select-none font-bold"
           >
             Use demo {mode} credentials
           </button>
 
           {/* Citizen register link */}
           {mode === 'user' && (
-            <p className="mt-4 text-center text-xs text-gray-400 select-none">
+            <p className="mt-3 text-center text-xs text-gray-400 select-none">
               New here?{' '}
               <Link to="/register" className="text-[#1D9E75] hover:underline font-bold">
                 Create account
@@ -259,37 +267,45 @@ export default function Login() {
             </p>
           )}
 
-          {/* Sensor-Dashboard Styled Stat Pills */}
-          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-white/10 dark:border-slate-800/40 pt-5 select-none">
-            <div className="rounded-xl bg-white/[0.01] dark:bg-black/[0.08] border border-white/5 p-2 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 bottom-0 w-0.75 bg-red-500"></div>
-              <div className="text-[9px] text-gray-400 font-bold">Violations</div>
-              <div className="text-xs text-red-400 font-black tracking-wide mt-0.5">791+</div>
-            </div>
-            
-            <div className="rounded-xl bg-white/[0.01] dark:bg-black/[0.08] border border-white/5 p-2 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 bottom-0 w-0.75 bg-green-500"></div>
-              <div className="text-[9px] text-gray-400 font-bold">Active Zones</div>
-              <div className="text-xs text-green-400 font-black tracking-wide mt-0.5">6</div>
-            </div>
-            
-            <div className="rounded-xl bg-white/[0.01] dark:bg-black/[0.08] border border-white/5 p-2 text-center relative overflow-hidden">
-              <div className="absolute top-0 left-0 bottom-0 w-0.75 bg-teal-500"></div>
-              <div className="text-[9px] text-gray-400 font-bold">Forecast</div>
-              <div className="text-xs text-teal-400 font-black tracking-wide mt-0.5">24h</div>
-            </div>
-          </div>
-
-          {/* Footer block */}
-          <div className="mt-6 flex items-center justify-between text-[10px] text-gray-500 font-medium border-t border-white/10 dark:border-slate-800/20 pt-4 select-none">
-            <span>BBMP authorized only</span>
-            <button type="button" className="hover:text-teal-400 hover:underline cursor-pointer bg-transparent border-none">
-              Forgot password?
-            </button>
-          </div>
-
         </div>
       </div>
+
+      {/* Floating Glass Status/Stats Bar at Bottom */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-10 w-full max-w-[420px] px-4 select-none pointer-events-auto">
+        <div className="flex items-center justify-around rounded-2xl border border-white/10 dark:border-teal-500/20 bg-slate-900/60 dark:bg-black/60 px-4 py-2.5 text-white shadow-[0_10px_30px_rgba(0,0,0,0.5),inset_0_1px_1px_rgba(255,255,255,0.1)] backdrop-blur-xl">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-red-500"></span>
+            </span>
+            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Violations</span>
+            <span className="text-xs text-red-400 font-black">791+</span>
+          </div>
+          <div className="h-4 w-px bg-white/10"></div>
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+            </span>
+            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Active Zones</span>
+            <span className="text-xs text-green-400 font-black">6</span>
+          </div>
+          <div className="h-4 w-px bg-white/10"></div>
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-500 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-500"></span>
+            </span>
+            <span className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Forecast</span>
+            <span className="text-xs text-teal-400 font-black">24h</span>
+          </div>
+        </div>
+        <p className="mt-1.5 text-center text-[9px] text-gray-500 font-bold uppercase tracking-widest">
+          BBMP Authorized Node
+        </p>
+      </div>
+
     </div>
   );
 }
+

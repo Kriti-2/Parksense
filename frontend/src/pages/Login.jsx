@@ -73,7 +73,7 @@ export default function Login() {
         playsInline
         className="fixed inset-0 z-0 h-full w-full object-cover transform-gpu will-change-[filter] transition-all duration-500 brightness-[0.35] contrast-[1.05] dark:brightness-[0.2] dark:contrast-[1.1]"
       >
-        <source src="/traffic video/12926930_3840_2160_60fps.mp4" type="video/mp4" />
+        <source src="/traffic_video/12926930_3840_2160_60fps.mp4" type="video/mp4" />
         <source src="https://assets.mixkit.co/videos/preview/mixkit-city-traffic-at-night-vertical-shot-34469-large.mp4" type="video/mp4" />
       </video>
 

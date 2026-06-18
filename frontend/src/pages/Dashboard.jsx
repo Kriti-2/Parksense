@@ -30,6 +30,11 @@ export default function Dashboard() {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
 
+  // Sparkline history state arrays for live updates
+  const [violationsLastHourHistory, setViolationsLastHourHistory] = useState([12, 16, 14, 19, 15, 23, 18, 20]);
+  const [activeHotspotsHistory, setActiveHotspotsHistory] = useState([2, 1, 3, 2, 4, 3, 2, 3]);
+  const [avgCongestionHistory, setAvgCongestionHistory] = useState([38, 42, 40, 45, 41, 48, 44, 46]);
+
   const handleLiveTick = useCallback((payload) => {
     if (payload.type !== 'live_tick') return;
     setLastTick(payload);
@@ -38,6 +43,19 @@ export default function Dashboard() {
       setHeatmap((prev) =>
         prev ? { ...prev, zone_intensity: payload.zone_intensity, generated_at: payload.timestamp } : prev
       );
+
+      // Update active hotspots history
+      const activeCount = Object.values(payload.zone_intensity || {}).filter(
+        (z) => z.congestion_score >= 50
+      ).length;
+      setActiveHotspotsHistory((prev) => [...prev.slice(-9), activeCount]);
+
+      // Update avg congestion history
+      const intensities = Object.values(payload.zone_intensity);
+      const avgScore = intensities.length > 0
+        ? intensities.reduce((s, z) => s + z.congestion_score, 0) / intensities.length
+        : 40;
+      setAvgCongestionHistory((prev) => [...prev.slice(-9), Math.round(avgScore)]);
     }
     if (payload.corridors) {
       setCorridors(payload.corridors);
@@ -64,6 +82,11 @@ export default function Dashboard() {
             }
           : prev
       );
+
+      // Update last hour violations history
+      if (payload.kpis.violations_last_hour !== undefined) {
+        setViolationsLastHourHistory((prev) => [...prev.slice(-9), payload.kpis.violations_last_hour]);
+      }
     }
   }, []);
 
@@ -178,24 +201,28 @@ export default function Dashboard() {
               title="Total Violations"
               value={kpis.total_violations?.toLocaleString('en-IN') || '—'}
               subtitle="Bengaluru police dataset"
+              sparklineData={analytics?.violation_trends?.map((t) => t.violations) || []}
               variant="accent"
             />
             <KPICard
               title="Active Hotspots"
               value={kpis.active_hotspots || 0}
               subtitle="Live congestion ≥ 50"
+              sparklineData={activeHotspotsHistory}
               variant="warning"
             />
             <KPICard
               title="Violations (1h)"
               value={lastTick?.kpis?.violations_last_hour ?? '—'}
               subtitle="Rolling live window"
+              sparklineData={violationsLastHourHistory}
               variant="danger"
             />
             <KPICard
               title="Avg Congestion Score"
               value={kpis.avg_congestion_score || 0}
               subtitle="Traffic + violation signal"
+              sparklineData={avgCongestionHistory}
               variant="default"
             />
           </div>

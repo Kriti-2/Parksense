@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getGoogleOAuthUrl } from '../api/client';
+import ChatBot from '../components/ChatBot';
 
 export default function Login() {
   const { user, login } = useAuth();
@@ -314,6 +315,8 @@ export default function Login() {
           </div>
         </div>
       </div>
+
+      <ChatBot context="login" />
 
     </div>
   );

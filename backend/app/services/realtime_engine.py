@@ -30,6 +30,12 @@ class RealtimeEngine:
         self._settings = get_settings()
         self._last_tick: dict[str, Any] = {}
 
+    def get_last_tick(self) -> dict[str, Any]:
+        if not self._last_tick:
+            return self.tick()
+        return self._last_tick
+
+
     def combined_dataframe(self) -> pd.DataFrame:
         store = get_data_store()
         base = store.load()

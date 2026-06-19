@@ -1,11 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
-import { api } from '../api/client';
+import client from '../api/client';
 
-export default function ChatBot() {
+export default function ChatBot({ context = 'dashboard' }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hello! I am the ParkSense AI Command Center Assistant. How can I help you today?' }
-  ]);
+  const [messages, setMessages] = useState(() => {
+    if (context === 'login') {
+      return [
+        { role: 'assistant', content: 'Hello! I am the ParkSense AI Public Assistant. How can I help you learn about ParkSense or access your account today?' }
+      ];
+    }
+    return [
+      { role: 'assistant', content: 'Hello! I am the ParkSense AI Command Center Assistant. How can I help you today?' }
+    ];
+  });
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
@@ -28,8 +35,52 @@ export default function ChatBot() {
     setIsLoading(true);
 
     try {
-      const response = await api.chat({ message: userMessage });
-      setMessages(prev => [...prev, { role: 'assistant', content: response.data.response }]);
+      const baseURL = client.defaults.baseURL || '/api';
+      const response = await fetch(`${baseURL}/chat/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(client.defaults.headers.common.Authorization
+            ? { 'Authorization': client.defaults.headers.common.Authorization }
+            : {}),
+        },
+        body: JSON.stringify({ message: userMessage, stream: true, context }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder('utf-8');
+      let done = false;
+      let accumulatedText = '';
+      let hasAddedAssistantMessage = false;
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          const chunk = decoder.decode(value, { stream: !done });
+          accumulatedText += chunk;
+
+          if (!hasAddedAssistantMessage) {
+            hasAddedAssistantMessage = true;
+            setMessages(prev => [...prev, { role: 'assistant', content: accumulatedText }]);
+          } else {
+            setMessages(prev => {
+              const updated = [...prev];
+              if (updated.length > 0) {
+                updated[updated.length - 1] = {
+                  role: 'assistant',
+                  content: accumulatedText
+                };
+              }
+              return updated;
+            });
+          }
+        }
+      }
     } catch (error) {
       console.error('Failed to get AI response:', error);
       setMessages(prev => [
@@ -73,7 +124,9 @@ export default function ChatBot() {
             </div>
             <div>
               <h3 className="font-bold">ParkSense AI</h3>
-              <p className="text-xs text-white/80">Command Center Assistant</p>
+              <p className="text-xs text-white/80">
+                {context === 'login' ? 'Public Assistant' : 'Command Center Assistant'}
+              </p>
             </div>
           </div>
 
@@ -110,7 +163,7 @@ export default function ChatBot() {
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about live congestion..."
+              placeholder={context === 'login' ? 'Ask about login or access...' : 'Ask about live congestion...'}
               className="flex-1 bg-command-bg border border-command-border rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-command-accent text-command-muted transition-colors"
               disabled={isLoading}
             />
@@ -129,3 +182,4 @@ export default function ChatBot() {
     </>
   );
 }
+

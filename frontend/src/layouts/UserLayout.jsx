@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import LiveStatusBar from '../components/LiveStatusBar';
 import NoticesBanner from '../components/NoticesBanner';
 import ThemeToggle from '../components/ThemeToggle';
+import ChatBot from '../components/ChatBot';
 
 export default function UserLayout({ children }) {
   const { user, logout } = useAuth();
@@ -91,6 +92,7 @@ export default function UserLayout({ children }) {
       <main className="mx-auto max-w-6xl p-6">
         {children || <Outlet />}
       </main>
+      <ChatBot context="citizen" />
     </div>
   );
 }

@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }) {
             </div>
             <div className="leading-tight">
               <div className="text-[15px] font-bold text-gray-900 dark:text-white">ParkSense</div>
-              <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Making Invisible Congestion Visible.</div>
+              <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden sm:block">Making Invisible Congestion Visible.</div>
             </div>
           </div>
 

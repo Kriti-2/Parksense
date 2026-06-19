@@ -259,7 +259,7 @@ export default function Predict() {
         </div>
       </div>
 
-      <HeatMap data={heatmap} zoneIntensity={simulatedZoneIntensity} height="350px" />
+      <HeatMap data={heatmap} zoneIntensity={simulatedZoneIntensity} className="h-[280px] sm:h-[350px] md:h-[400px]" />
       <ShiftPlanner data={shiftData} />
     </div>
   );

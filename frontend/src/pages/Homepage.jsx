@@ -52,7 +52,7 @@ function HeroSection({ analytics, lastTick, connected }) {
   return (
     <div className="-mx-4 md:-mx-6 mb-8">
       {/* ── Carousel image area ─────────────────────────────────────────── */}
-      <div className="relative group w-full overflow-hidden" style={{ height: '420px' }}>
+      <div className="relative group w-full overflow-hidden h-[280px] sm:h-[350px] md:h-[420px]">
 
         {/* Background slides */}
         {SLIDES.map((slide, i) => (
@@ -83,36 +83,36 @@ function HeroSection({ analytics, lastTick, connected }) {
         />
 
         {/* ── Left text content ────────────────────────────────────────── */}
-        <div className="absolute inset-0 z-30 flex flex-col justify-center px-8 md:px-14" style={{ maxWidth: '520px' }}>
+        <div className="absolute inset-0 z-30 flex flex-col justify-center px-6 sm:px-10 md:px-14" style={{ maxWidth: '520px' }}>
           {/* Label */}
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2 sm:mb-4">
             <div className="h-px w-8 bg-[#BA5A5A]" />
             <span className="text-[#BA5A5A] text-xs font-bold tracking-widest uppercase">ParkSense</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-white font-black leading-tight mb-3" style={{ fontSize: 'clamp(1.8rem, 4vw, 2.6rem)', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
+          <h1 className="text-white font-black leading-tight mb-2 sm:mb-3" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.6rem)', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
             Making Bengaluru<br />
             Move Smarter.
           </h1>
 
           {/* Subtitle */}
-          <p className="text-white/65 text-sm leading-relaxed mb-7 max-w-xs">
+          <p className="text-white/65 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-7 max-w-xs">
             Predict congestion. Detect violations. Optimize mobility.
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2.5 flex-wrap">
             <button
               onClick={() => navigate('/')}
-              className="flex items-center gap-2 bg-[#BA5A5A] hover:bg-[#A04848] text-white text-sm font-bold px-5 py-2.5 rounded-lg shadow-lg transition-colors cursor-pointer"
+              className="flex items-center gap-2 bg-[#BA5A5A] hover:bg-[#A04848] text-white text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg shadow-lg transition-colors cursor-pointer"
             >
               <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
               Live Feed
             </button>
             <button
               onClick={() => navigate('/predict')}
-              className="flex items-center gap-2 border border-white/35 text-white text-sm font-bold px-5 py-2.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
+              className="flex items-center gap-2 border border-white/35 text-white text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg hover:bg-white/10 transition-colors cursor-pointer"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -409,7 +409,7 @@ export default function Homepage() {
                 variant="default"
               />
             </div>
-            <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} height="450px" />
+            <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
           </div>
         )}
 

@@ -28,7 +28,7 @@ function intensityColor(score) {
   return '#9FC9BA'; // Safe sage
 }
 
-export default function HeatMap({ data, zoneIntensity = {}, height = '400px' }) {
+export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320px] sm:h-[400px] md:h-[480px]' }) {
   const features = data?.features || [];
 
   const zoneMarkers = useMemo(
@@ -46,7 +46,7 @@ export default function HeatMap({ data, zoneIntensity = {}, height = '400px' }) 
   );
 
   return (
-    <div className="overflow-hidden rounded-xl border border-command-border" style={{ height }}>
+    <div className={`overflow-hidden rounded-xl border border-command-border ${className}`}>
       <MapContainer center={BENGALURU_CENTER} zoom={12} scrollWheelZoom preferCanvas style={{ height: '100%' }}>
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Google Streets">

@@ -272,7 +272,7 @@ export default function UserCongestion() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Map Column (lg:col-span-2) */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="h-96 overflow-hidden rounded-xl border border-command-border interactive-card shadow-sm relative text-left">
+          <div className="h-[300px] sm:h-[384px] overflow-hidden rounded-xl border border-command-border interactive-card shadow-sm relative text-left">
             <MapContainer center={BENGALURU_CENTER} zoom={11} style={{ height: '100%' }}>
               <LayersControl position="topright">
                 <LayersControl.BaseLayer checked name="Google Streets">

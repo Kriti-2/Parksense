@@ -12,7 +12,7 @@
 }
 
 :root {
-  --command-bg: #F6F4E8;
+  --command-bg: #F4F6F5;
   --command-panel: #FFFFFF;
   --command-border: #E5EEE4;
   --command-accent: #486E5D;
@@ -181,4 +181,758 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Float animation for minimal, aesthetic background orbs */
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -20px) scale(1.05);
+  }
+}
+
+.animate-float {
+  animation: float 25s ease-in-out infinite;
+}
+
+/* Subtle, minimal glassmorphism overrides and variables */
+.glass-panel {
+  background-color: var(--command-panel-glass) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--command-border-glass) !important;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.03);
+}
+
+.dark .glass-panel {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+}
+
+/* Layout Glass theme - makes the inside look like a premium dark glass command center */
+.layout-glass {
+  /* Dynamic variable redefinition for Light Mode (frosted white glass) */
+  --command-bg: #F4F6F5;
+  --command-panel: rgba(255, 255, 255, 0.42);
+  --command-border: rgba(255, 255, 255, 0.25);
+  --command-accent: #2563eb;
+  --command-warning: #D29C42;
+  --command-danger: #C27A7A;
+  --command-success: #2563eb;
+  --command-muted: #475569;
+  --command-text: #1E293B;
+  --command-title: #0F172A;
+  --command-panel-glass: rgba(255, 255, 255, 0.42);
+  --command-border-glass: rgba(255, 255, 255, 0.25);
+
+  color: #1E293B !important;
+}
+
+.layout-glass video {
+  filter: brightness(0.68) contrast(0.85) blur(8px) !important;
+  transition: filter 0.5s ease !important;
+}
+
+.layout-glass h1, 
+.layout-glass h2, 
+.layout-glass h3, 
+.layout-glass h4, 
+.layout-glass h5, 
+.layout-glass h6 {
+  color: var(--command-title) !important;
+}
+
+/* Force override for background of panels, aside sidebar, and headers */
+.layout-glass .bg-command-panel,
+.layout-glass aside,
+.layout-glass header {
+  background-color: var(--command-panel-glass) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border-color: var(--command-border-glass) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.25), 0 20px 40px -15px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Sidebar branding header background */
+.layout-glass aside .bg-gradient-to-r {
+  background: transparent !important;
+}
+
+/* Muted text colors inside glass layout */
+.layout-glass .text-command-muted,
+.layout-glass .text-gray-400,
+.layout-glass .text-gray-500,
+.layout-glass .text-gray-600 {
+  color: var(--command-muted) !important;
+}
+
+/* Title text colors */
+.layout-glass .text-gray-800,
+.layout-glass .text-gray-900,
+.layout-glass .text-gray-700 {
+  color: var(--command-text) !important;
+}
+
+/* KPI values & highlight text dynamic */
+.layout-glass .text-white {
+  color: var(--command-title) !important;
+}
+
+/* Unselected nav link hovering/active inside sidebar */
+.layout-glass aside nav a:not(.active) {
+  color: var(--command-muted) !important;
+}
+.layout-glass aside nav a:not(.active):hover {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  color: var(--command-title) !important;
+}
+
+/* Dropdown select boxes inside glass layout */
+.layout-glass select,
+.layout-glass input {
+  background-color: rgba(255, 255, 255, 0.4) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: var(--command-text) !important;
+}
+.layout-glass select option {
+  background-color: #FFFFFF !important;
+  color: #1E293B !important;
+}
+
+/* Tab selector backgrounds */
+.layout-glass .bg-command-panel.border-command-border {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Weather banner transparent bg */
+.layout-glass .bg-command-accent\/5,
+.layout-glass .bg-command-warning\/5,
+.layout-glass .bg-command-danger\/5 {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+/* Active tab override */
+.layout-glass button.bg-command-accent {
+  background-color: rgba(255, 255, 255, 0.5) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  color: var(--command-title) !important;
+}
+.layout-glass button:not(.bg-command-accent) {
+  color: var(--command-muted) !important;
+}
+.layout-glass button:not(.bg-command-accent):hover {
+  color: var(--command-title) !important;
+}
+
+/* Leaflet control search/zoom buttons adapt */
+.layout-glass .leaflet-bar a {
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  color: var(--command-text) !important;
+}
+
+/* Glass profile card at bottom of sidebar */
+.layout-glass aside .bg-command-bg\/20 {
+  background: transparent !important;
+}
+.layout-glass aside .bg-white {
+  background-color: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Sub-card backgrounds in trip planner (standard/eco) */
+.layout-glass .bg-white.border-command-border\/40 {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Text gray scale overrides */
+.layout-glass .text-gray-300 {
+  color: var(--command-text) !important;
+}
+.layout-glass .text-gray-200 {
+  color: var(--command-text) !important;
+}
+.layout-glass .text-gray-800 {
+  color: var(--command-title) !important;
+}
+.layout-glass .text-gray-600 {
+  color: var(--command-muted) !important;
+}
+
+/* LiveStatusBar Custom Styling and Overrides */
+.layout-glass .status-bar-pill {
+  background-color: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), inset 0 1px 0 0 rgba(255, 255, 255, 0.2) !important;
+}
+.layout-glass .status-bar-pill:hover {
+  background-color: rgba(255, 255, 255, 0.35) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+.layout-glass .status-bar-label {
+  color: var(--command-muted) !important;
+}
+.layout-glass .status-bar-value {
+  color: var(--command-text) !important;
+}
+
+/* WeatherBanner Overrides */
+.layout-glass .weather-banner-card {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.25) !important;
+}
+.layout-glass .weather-title {
+  color: var(--command-title) !important;
+}
+.layout-glass .weather-meta {
+  color: var(--command-muted) !important;
+}
+.layout-glass .weather-desc {
+  color: var(--command-muted) !important;
+}
+.layout-glass .weather-rain-info {
+  color: var(--command-text) !important;
+}
+.layout-glass .weather-escalation-desc {
+  color: var(--command-muted) !important;
+}
+
+/* Glass Theme Alert levels color coding */
+.layout-glass .weather-card-critical {
+  border-color: rgba(194, 122, 122, 0.5) !important;
+  background: linear-gradient(to right, rgba(194, 122, 122, 0.12), rgba(194, 122, 122, 0.03), transparent) !important;
+}
+.layout-glass .weather-card-critical .weather-badge {
+  background-color: rgba(194, 122, 122, 0.15) !important;
+  color: #C27A7A !important;
+}
+.layout-glass .weather-card-critical .weather-alert-label {
+  color: #C27A7A !important;
+}
+
+.layout-glass .weather-card-high {
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03), transparent) !important;
+}
+.layout-glass .weather-card-high .weather-badge {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #D97706 !important;
+}
+.layout-glass .weather-card-high .weather-alert-label {
+  color: #D97706 !important;
+}
+
+.layout-glass .weather-card-medium {
+  border-color: rgba(210, 156, 66, 0.5) !important;
+  background: linear-gradient(to right, rgba(210, 156, 66, 0.12), rgba(210, 156, 66, 0.03), transparent) !important;
+}
+.layout-glass .weather-card-medium .weather-badge {
+  background-color: rgba(210, 156, 66, 0.15) !important;
+  color: #D29C42 !important;
+}
+.layout-glass .weather-card-medium .weather-alert-label {
+  color: #D29C42 !important;
+}
+
+.layout-glass .weather-card-low, .layout-glass .weather-card-none {
+  border-color: rgba(72, 110, 93, 0.3) !important;
+  background: linear-gradient(to right, rgba(72, 110, 93, 0.08), rgba(72, 110, 93, 0.01), transparent) !important;
+}
+.layout-glass .weather-card-low .weather-badge, .layout-glass .weather-card-none .weather-badge {
+  background-color: rgba(72, 110, 93, 0.12) !important;
+  color: #486E5D !important;
+}
+
+
+/* --- DARK MODE OVERRIDES FOR GLASS LAYOUT --- */
+
+.dark .layout-glass,
+.dark.layout-glass {
+  --command-bg: #1C1917;
+  --command-panel: rgba(15, 23, 42, 0.55);
+  --command-border: rgba(255, 255, 255, 0.1);
+  --command-accent: #38bdf8;
+  --command-warning: #fbbf24;
+  --command-danger: #f87171;
+  --command-success: #38bdf8;
+  --command-muted: rgba(255, 255, 255, 0.65);
+  --command-text: rgba(255, 255, 255, 0.9);
+  --command-title: #FFFFFF;
+  --command-panel-glass: rgba(15, 23, 42, 0.55);
+  --command-border-glass: rgba(255, 255, 255, 0.15);
+
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.dark .layout-glass video,
+.dark.layout-glass video {
+  filter: brightness(0.14) contrast(0.95) blur(10px) !important;
+}
+
+.dark .layout-glass h1, 
+.dark .layout-glass h2, 
+.dark .layout-glass h3, 
+.dark .layout-glass h4, 
+.dark .layout-glass h5, 
+.dark .layout-glass h6,
+.dark.layout-glass h1, 
+.dark.layout-glass h2, 
+.dark.layout-glass h3, 
+.dark.layout-glass h4, 
+.dark.layout-glass h5, 
+.dark.layout-glass h6 {
+  color: #FFFFFF !important;
+}
+
+.dark .layout-glass .bg-command-panel,
+.dark .layout-glass aside,
+.dark .layout-glass header,
+.dark.layout-glass .bg-command-panel,
+.dark.layout-glass aside,
+.dark.layout-glass header {
+  background-color: rgba(15, 23, 42, 0.72) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.1), 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+.dark .layout-glass .text-command-muted,
+.dark .layout-glass .text-gray-400,
+.dark .layout-glass .text-gray-500,
+.dark .layout-glass .text-gray-600,
+.dark.layout-glass .text-command-muted,
+.dark.layout-glass .text-gray-400,
+.dark.layout-glass .text-gray-500,
+.dark.layout-glass .text-gray-600 {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.dark .layout-glass .text-gray-800,
+.dark .layout-glass .text-gray-900,
+.dark .layout-glass .text-gray-700,
+.dark.layout-glass .text-gray-800,
+.dark.layout-glass .text-gray-900,
+.dark.layout-glass .text-gray-700 {
+  color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.dark .layout-glass .text-white,
+.dark.layout-glass .text-white {
+  color: #FFFFFF !important;
+}
+
+.dark .layout-glass aside nav a:not(.active),
+.dark.layout-glass aside nav a:not(.active) {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+.dark .layout-glass aside nav a:not(.active):hover,
+.dark.layout-glass aside nav a:not(.active):hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: #FFFFFF !important;
+}
+
+.dark .layout-glass select,
+.dark .layout-glass input,
+.dark.layout-glass select,
+.dark.layout-glass input {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: #FFFFFF !important;
+}
+.dark .layout-glass select option,
+.dark.layout-glass select option {
+  background-color: #0f172a !important;
+  color: #FFFFFF !important;
+}
+
+.dark .layout-glass .bg-command-panel.border-command-border,
+.dark.layout-glass .bg-command-panel.border-command-border {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .layout-glass .bg-command-accent\/5,
+.dark .layout-glass .bg-command-warning\/5,
+.dark .layout-glass .bg-command-danger\/5,
+.dark.layout-glass .bg-command-accent\/5,
+.dark.layout-glass .bg-command-warning\/5,
+.dark.layout-glass .bg-command-danger\/5 {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+.dark .layout-glass button.bg-command-accent,
+.dark.layout-glass button.bg-command-accent {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+}
+.dark .layout-glass button:not(.bg-command-accent),
+.dark.layout-glass button:not(.bg-command-accent) {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+.dark .layout-glass button:not(.bg-command-accent):hover,
+.dark.layout-glass button:not(.bg-command-accent):hover {
+  color: #FFFFFF !important;
+}
+
+.dark .layout-glass .leaflet-bar a,
+.dark.layout-glass .leaflet-bar a {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+}
+
+.dark .layout-glass aside .bg-white,
+.dark.layout-glass aside .bg-white {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .layout-glass .bg-white.border-command-border\/40,
+.dark.layout-glass .bg-white.border-command-border\/40 {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .layout-glass .text-gray-300, .dark .layout-glass .text-gray-200, .dark .layout-glass .text-gray-800, .dark .layout-glass .text-gray-600,
+.dark.layout-glass .text-gray-300, .dark.layout-glass .text-gray-200, .dark.layout-glass .text-gray-800, .dark.layout-glass .text-gray-600 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.dark .layout-glass .status-bar-pill,
+.dark.layout-glass .status-bar-pill {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+}
+.dark .layout-glass .status-bar-pill:hover,
+.dark.layout-glass .status-bar-pill:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+.dark .layout-glass .status-bar-label,
+.dark.layout-glass .status-bar-label {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+.dark .layout-glass .status-bar-value,
+.dark.layout-glass .status-bar-value {
+  color: #ffffff !important;
+}
+
+/* Dark mode Alert styles */
+.dark .layout-glass .weather-card-critical,
+.dark.layout-glass .weather-card-critical {
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  background: linear-gradient(to right, rgba(248, 113, 113, 0.15), rgba(248, 113, 113, 0.03), transparent) !important;
+}
+.dark .layout-glass .weather-card-critical .weather-badge,
+.dark.layout-glass .weather-card-critical .weather-badge {
+  background-color: rgba(248, 113, 113, 0.2) !important;
+  border: 1px solid rgba(248, 113, 113, 0.25) !important;
+  color: #f87171 !important;
+}
+.dark .layout-glass .weather-card-critical .weather-alert-label,
+.dark.layout-glass .weather-card-critical .weather-alert-label {
+  color: #f87171 !important;
+}
+
+.dark .layout-glass .weather-card-high,
+.dark.layout-glass .weather-card-high {
+  border-color: rgba(251, 146, 60, 0.35) !important;
+  background: linear-gradient(to right, rgba(251, 146, 60, 0.15), rgba(251, 146, 60, 0.03), transparent) !important;
+}
+.dark .layout-glass .weather-card-high .weather-badge,
+.dark.layout-glass .weather-card-high .weather-badge {
+  background-color: rgba(251, 146, 60, 0.2) !important;
+  border: 1px solid rgba(251, 146, 60, 0.25) !important;
+  color: #fb923c !important;
+}
+.dark .layout-glass .weather-card-high .weather-alert-label,
+.dark.layout-glass .weather-card-high .weather-alert-label {
+  color: #fb923c !important;
+}
+
+.dark .layout-glass .weather-card-medium,
+.dark.layout-glass .weather-card-medium {
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  background: linear-gradient(to right, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.03), transparent) !important;
+}
+.dark .layout-glass .weather-card-medium .weather-badge,
+.dark.layout-glass .weather-card-medium .weather-badge {
+  background-color: rgba(251, 191, 36, 0.2) !important;
+  border: 1px solid rgba(251, 191, 36, 0.25) !important;
+  color: #fbbf24 !important;
+}
+.dark .layout-glass .weather-card-medium .weather-alert-label,
+.dark.layout-glass .weather-card-medium .weather-alert-label {
+  color: #fbbf24 !important;
+}
+
+.dark .layout-glass .weather-card-low, .dark .layout-glass .weather-card-none,
+.dark.layout-glass .weather-card-low, .dark.layout-glass .weather-card-none {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.dark .layout-glass .weather-card-low .weather-badge, .dark .layout-glass .weather-card-none .weather-badge,
+.dark.layout-glass .weather-card-low .weather-badge, .dark.layout-glass .weather-card-none .weather-badge {
+  background-color: rgba(52, 211, 153, 0.12) !important;
+  border: 1px solid rgba(52, 211, 153, 0.2) !important;
+  color: #34d399 !important;
+}
+
+.dark .layout-glass .weather-banner-card,
+.dark.layout-glass .weather-banner-card {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+.dark .layout-glass .weather-title,
+.dark.layout-glass .weather-title {
+  color: #ffffff !important;
+}
+.dark .layout-glass .weather-meta,
+.dark.layout-glass .weather-meta {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+.dark .layout-glass .weather-desc,
+.dark.layout-glass .weather-desc {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+.dark .layout-glass .weather-rain-info,
+.dark.layout-glass .weather-rain-info {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+.dark .layout-glass .weather-escalation-desc,
+.dark.layout-glass .weather-escalation-desc {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+.layout-glass aside,
+.layout-glass header {
+  --command-accent: #38bdf8 !important;
+  --color-command-accent: #38bdf8 !important;
+  --command-success: #38bdf8 !important;
+  --color-command-success: #38bdf8 !important;
+}
+
+.status-bar-pill {
+  background-color: var(--command-panel);
+  border-color: var(--command-border);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.status-bar-pill:hover {
+  transform: translateY(-1px);
+}
+
+.status-bar-label {
+  color: var(--command-muted);
+}
+
+.status-bar-value {
+  color: var(--command-text);
+}
+
+/* Glass layout specific overrides to make the content pop on the dark video background */
+.layout-glass .status-bar-pill {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), inset 0 1px 0 0 rgba(255, 255, 255, 0.05) !important;
+}
+
+.layout-glass .status-bar-pill:hover {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+.layout-glass .status-bar-label {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.layout-glass .status-bar-value {
+  color: #ffffff !important;
+}
+
+/* WeatherBanner Base Styling and Overrides */
+.weather-banner-card {
+  background-color: var(--command-panel);
+  border-color: var(--command-border);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s ease;
+}
+
+.weather-title {
+  color: var(--command-title);
+}
+
+.weather-meta {
+  color: var(--command-muted);
+}
+
+.weather-desc {
+  color: var(--command-muted);
+}
+
+.weather-rain-info {
+  color: var(--command-muted);
+}
+
+.weather-escalation-desc {
+  color: var(--command-muted);
+}
+
+/* Alert styles for Normal (Light/Dark) Theme */
+.weather-card-critical {
+  border-color: rgba(194, 122, 122, 0.5) !important;
+  background: linear-gradient(to right, rgba(194, 122, 122, 0.12), rgba(194, 122, 122, 0.03), transparent) !important;
+}
+.weather-card-critical .weather-badge {
+  background-color: rgba(194, 122, 122, 0.15) !important;
+  color: #C27A7A !important;
+}
+.weather-card-critical .weather-alert-label {
+  color: #C27A7A !important;
+}
+
+.weather-card-high {
+  border-color: rgba(245, 158, 11, 0.5) !important;
+  background: linear-gradient(to right, rgba(245, 158, 11, 0.12), rgba(245, 158, 11, 0.03), transparent) !important;
+}
+.weather-card-high .weather-badge {
+  background-color: rgba(245, 158, 11, 0.15) !important;
+  color: #D97706 !important;
+}
+.weather-card-high .weather-alert-label {
+  color: #D97706 !important;
+}
+
+.weather-card-medium {
+  border-color: rgba(210, 156, 66, 0.5) !important;
+  background: linear-gradient(to right, rgba(210, 156, 66, 0.12), rgba(210, 156, 66, 0.03), transparent) !important;
+}
+.weather-card-medium .weather-badge {
+  background-color: rgba(210, 156, 66, 0.15) !important;
+  color: #D29C42 !important;
+}
+.weather-card-medium .weather-alert-label {
+  color: #D29C42 !important;
+}
+
+.weather-card-low, .weather-card-none {
+  border-color: rgba(72, 110, 93, 0.3) !important;
+  background: linear-gradient(to right, rgba(72, 110, 93, 0.08), rgba(72, 110, 93, 0.01), transparent) !important;
+}
+.weather-card-low .weather-badge, .weather-card-none .weather-badge {
+  background-color: rgba(72, 110, 93, 0.12) !important;
+  color: #486E5D !important;
+}
+
+/* Glass layout specific overrides to make the weather banner pop on the dark video background */
+.layout-glass .weather-banner-card {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+}
+
+.layout-glass .weather-title {
+  color: #ffffff !important;
+}
+
+.layout-glass .weather-meta {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.layout-glass .weather-desc {
+  color: rgba(255, 255, 255, 0.5) !important;
+}
+
+.layout-glass .weather-rain-info {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.layout-glass .weather-escalation-desc {
+  color: rgba(255, 255, 255, 0.6) !important;
+}
+
+/* Glass Theme Alert levels color coding */
+.layout-glass .weather-card-critical {
+  border-color: rgba(248, 113, 113, 0.35) !important;
+  background: linear-gradient(to right, rgba(248, 113, 113, 0.15), rgba(248, 113, 113, 0.03), transparent) !important;
+}
+.layout-glass .weather-card-critical .weather-badge {
+  background-color: rgba(248, 113, 113, 0.2) !important;
+  border: 1px solid rgba(248, 113, 113, 0.25) !important;
+  color: #f87171 !important;
+}
+.layout-glass .weather-card-critical .weather-alert-label {
+  color: #f87171 !important;
+}
+
+.layout-glass .weather-card-high {
+  border-color: rgba(251, 146, 60, 0.35) !important;
+  background: linear-gradient(to right, rgba(251, 146, 60, 0.15), rgba(251, 146, 60, 0.03), transparent) !important;
+}
+.layout-glass .weather-card-high .weather-badge {
+  background-color: rgba(251, 146, 60, 0.2) !important;
+  border: 1px solid rgba(251, 146, 60, 0.25) !important;
+  color: #fb923c !important;
+}
+.layout-glass .weather-card-high .weather-alert-label {
+  color: #fb923c !important;
+}
+
+.layout-glass .weather-card-medium {
+  border-color: rgba(251, 191, 36, 0.35) !important;
+  background: linear-gradient(to right, rgba(251, 191, 36, 0.15), rgba(251, 191, 36, 0.03), transparent) !important;
+}
+.layout-glass .weather-card-medium .weather-badge {
+  background-color: rgba(251, 191, 36, 0.2) !important;
+  border: 1px solid rgba(251, 191, 36, 0.25) !important;
+  color: #fbbf24 !important;
+}
+.layout-glass .weather-card-medium .weather-alert-label {
+  color: #fbbf24 !important;
+}
+
+.layout-glass .weather-card-low, .layout-glass .weather-card-none {
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+}
+.layout-glass .weather-card-low .weather-badge, .layout-glass .weather-card-none .weather-badge {
+  background-color: rgba(52, 211, 153, 0.12) !important;
+  border: 1px solid rgba(52, 211, 153, 0.2) !important;
+  color: #34d399 !important;
+}
+
+/* Sidebar and Navbar Accent Variable Overrides (replacing green with blue accents) */
+aside,
+header {
+  --command-accent: #2563eb !important;
+  --color-command-accent: #2563eb !important;
+  --command-success: #2563eb !important;
+  --color-command-success: #2563eb !important;
+}
+
+.dark aside,
+.dark header {
+  --command-accent: #60a5fa !important;
+  --color-command-accent: #60a5fa !important;
+  --command-success: #60a5fa !important;
+  --color-command-success: #60a5fa !important;
+}
+
+.layout-glass aside,
+.layout-glass header {
+  --command-accent: #38bdf8 !important;
+  --color-command-accent: #38bdf8 !important;
+  --command-success: #38bdf8 !important;
+  --color-command-success: #38bdf8 !important;
+}
+
+
+
+
+
+
 

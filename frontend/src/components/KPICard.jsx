@@ -1,3 +1,5 @@
+import TiltCard from './TiltCard';
+
 function Sparkline({ data, color = '#D97706' }) {
   if (!data || data.length < 2) return null;
 
@@ -58,7 +60,7 @@ export default function KPICard({ title, value, subtitle, trend, sparklineData, 
   };
 
   return (
-    <div className={`rounded-xl border bg-command-panel p-5 interactive-card shadow-sm transition-all duration-300 ${variants[variant]}`}>
+    <TiltCard className={`rounded-xl border bg-command-panel p-5 interactive-card shadow-sm transition-all duration-300 ${variants[variant]}`}>
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-1.5 flex-1 min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-wider text-command-muted leading-none">{title}</p>
@@ -78,6 +80,6 @@ export default function KPICard({ title, value, subtitle, trend, sparklineData, 
           )}
         </div>
       )}
-    </div>
+    </TiltCard>
   );
 }

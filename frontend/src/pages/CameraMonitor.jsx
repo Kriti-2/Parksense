@@ -163,10 +163,23 @@ export default function CameraMonitor() {
       try {
         addLog("Initializing neural network environment...", "info");
         
-        // Wait briefly for index.html scripts to boot
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        // Poll for TF.js / COCO-SSD to be ready (deferred scripts may still be loading)
+        const waitForTF = () => new Promise((resolve, reject) => {
+          const start = Date.now();
+          const check = setInterval(() => {
+            if (window.tf && window.cocoSsd) {
+              clearInterval(check);
+              resolve(true);
+            } else if (Date.now() - start > 15000) {
+              clearInterval(check);
+              resolve(false); // timed out
+            }
+          }, 200);
+        });
 
-        if (window.tf && window.cocoSsd) {
+        const tfReady = await waitForTF();
+
+        if (tfReady) {
           addLog("Compiling COCO-SSD MobileNetV2 network...", "info");
           setTfStatus('loading_model');
           const loadedModel = await window.cocoSsd.load({ base: 'lite_mobilenet_v2' });
@@ -714,6 +727,7 @@ export default function CameraMonitor() {
                     loop
                     muted
                     playsInline
+                    preload="metadata"
                     className="absolute inset-0 h-full w-full object-cover opacity-60"
                   />
 

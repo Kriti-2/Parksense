@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getGoogleOAuthUrl } from '../api/client';
 import ChatBot from '../components/ChatBot';
@@ -7,6 +7,7 @@ import ChatBot from '../components/ChatBot';
 export default function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   // Theme state: check local storage or system preference
   const [isDark, setIsDark] = useState(() => {
@@ -21,6 +22,15 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const oauthError = searchParams.get('error');
+    if (oauthError === 'google_oauth_denied') {
+      setError('Google sign-in was cancelled');
+    } else if (oauthError === 'google_oauth_failed') {
+      setError('Google sign-in failed. Check OAuth redirect URI and client credentials.');
+    }
+  }, [searchParams]);
 
   // Sync tailwind html tag with theme state
   useEffect(() => {
@@ -40,7 +50,7 @@ export default function Login() {
     setLoading(true);
     try {
       const u = await login(email, password);
-      navigate(u.role === 'officer' ? '/' : '/congestion');
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.detail || 'Login failed');
     } finally {
@@ -60,7 +70,7 @@ export default function Login() {
   }
 
   if (user) {
-    return <Navigate to={user.role === 'officer' ? '/' : '/congestion'} replace />;
+    return <Navigate to="/" replace />;
   }
 
   return (

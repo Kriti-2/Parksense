@@ -47,7 +47,7 @@ export default function HeatMap({ data, zoneIntensity = {}, height = '400px' }) 
 
   return (
     <div className="overflow-hidden rounded-xl border border-command-border" style={{ height }}>
-      <MapContainer center={BENGALURU_CENTER} zoom={12} scrollWheelZoom style={{ height: '100%' }}>
+      <MapContainer center={BENGALURU_CENTER} zoom={12} scrollWheelZoom preferCanvas style={{ height: '100%' }}>
         <LayersControl position="topright">
           <LayersControl.BaseLayer checked name="Google Streets">
             <TileLayer
@@ -69,7 +69,7 @@ export default function HeatMap({ data, zoneIntensity = {}, height = '400px' }) 
           </LayersControl.BaseLayer>
         </LayersControl>
         <FitBounds features={features} />
-        {features.slice(0, 1500).map((feature, idx) => {
+        {features.slice(0, 600).map((feature, idx) => {
           const [lon, lat] = feature.geometry.coordinates;
           const zone = feature.properties.zone;
           const score = zoneIntensity[zone]?.congestion_score || 30;

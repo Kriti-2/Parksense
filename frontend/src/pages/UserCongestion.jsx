@@ -3,6 +3,7 @@ import { MapContainer, TileLayer, CircleMarker, Popup, LayersControl, Polyline, 
 import 'leaflet/dist/leaflet.css';
 import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
+import TiltCard from '../components/TiltCard';
 
 const BENGALURU_CENTER = [12.9716, 77.5946];
 const ADVISORY_COLORS = { red: '#C27A7A', orange: '#D29C42', green: '#486E5D' };
@@ -221,16 +222,16 @@ export default function UserCongestion() {
       {/* Gamified Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Apple Activity compliance ring */}
-        <div className="rounded-xl border border-command-border bg-command-panel p-4 flex items-center gap-4 interactive-card shadow-sm">
+        <TiltCard className="rounded-xl border border-command-border bg-command-panel p-4 flex items-center gap-4 interactive-card shadow-sm">
           <ComplianceRing score={Math.min(100, Math.round(totalSavings * 20))} />
           <div className="text-left">
             <h4 className="text-sm font-bold text-white uppercase tracking-wider">Compliance Ring</h4>
             <p className="text-[10px] text-command-muted mt-0.5 leading-relaxed">Ratio of eco-smart commute selections</p>
           </div>
-        </div>
+        </TiltCard>
 
         {/* Card 2: Vector Carbon Tree */}
-        <div className="rounded-xl border border-command-border bg-command-panel p-4 flex items-center gap-4 interactive-card shadow-sm justify-between">
+        <TiltCard className="rounded-xl border border-command-border bg-command-panel p-4 flex items-center gap-4 interactive-card shadow-sm justify-between">
           <div className="flex items-center gap-4">
             <CarbonTree savings={totalSavings} />
             <div className="text-left">
@@ -241,10 +242,10 @@ export default function UserCongestion() {
           <span className="text-[8px] bg-command-success text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider shrink-0">
             {totalSavings >= 3.0 ? 'Blooming 🌸' : 'Growing 🌱'}
           </span>
-        </div>
+        </TiltCard>
 
         {/* Card 3: Total Impact offsets */}
-        <div className="rounded-xl border border-command-border bg-command-panel p-4 flex flex-col justify-between interactive-card shadow-sm min-h-[90px] text-left">
+        <TiltCard className="rounded-xl border border-command-border bg-command-panel p-4 flex flex-col justify-between interactive-card shadow-sm min-h-[90px] text-left">
           <div className="flex justify-between items-center text-xs">
             <span className="text-command-muted font-bold uppercase tracking-wider text-[9px]">Cumulative Impact</span>
             <span className="text-[9px] bg-command-accent/10 border border-command-accent/30 text-command-accent px-1.5 py-0.5 rounded font-bold uppercase shrink-0">
@@ -265,7 +266,7 @@ export default function UserCongestion() {
               <span className="text-[8px] text-gray-500 font-semibold uppercase">Time Saved</span>
             </div>
           </div>
-        </div>
+        </TiltCard>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -351,7 +352,7 @@ export default function UserCongestion() {
           </div>
 
           {/* Trip Planner Control Card */}
-          <div className="rounded-xl border border-command-border bg-command-panel p-5 shadow-sm space-y-4">
+          <TiltCard className="rounded-xl border border-command-border bg-command-panel p-5 shadow-sm space-y-4">
             <div className="flex items-center gap-2 text-left">
               <span className="text-lg">🧭</span>
               <div>
@@ -391,7 +392,7 @@ export default function UserCongestion() {
             >
               Calculate Route Options
             </button>
-          </div>
+          </TiltCard>
         </div>
 
         {/* Impact Stats + Advisories Column */}

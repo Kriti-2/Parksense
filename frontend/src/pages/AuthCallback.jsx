@@ -10,13 +10,12 @@ export default function AuthCallback() {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    const role = searchParams.get('role');
     if (!token) {
       setError('No token received from OAuth provider');
       return;
     }
     loginWithToken(token)
-      .then(() => navigate(role === 'officer' ? '/' : '/congestion', { replace: true }))
+      .then((user) => navigate(user.role === 'officer' ? '/' : '/congestion', { replace: true }))
       .catch(() => setError('Failed to complete sign-in'));
   }, [searchParams, loginWithToken, navigate]);
 

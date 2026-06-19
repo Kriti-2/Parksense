@@ -81,11 +81,10 @@ export default function WeatherBanner({ weatherData, liveWeather }) {
   const alertLevel = weather.alert_level || 'NONE';
   const style = ALERT_STYLES[alertLevel] || ALERT_STYLES.NONE;
   const isEscalated = weather.multiplier > 1.0;
-
   return (
     <div
       id="weather-banner"
-      className={`relative overflow-hidden rounded-xl border ${style.border} ${style.bg} px-4 py-3 transition-all duration-500`}
+      className={`weather-banner-card weather-card-${alertLevel.toLowerCase()} relative overflow-hidden rounded-xl border px-4 py-3.5 transition-all duration-500 backdrop-blur-md`}
     >
       {/* Pulse animation for rain alerts */}
       {style.pulse && (
@@ -103,38 +102,38 @@ export default function WeatherBanner({ weatherData, liveWeather }) {
         <div className="flex items-center gap-2">
           <span className="text-2xl">{icon}</span>
           <div>
-            <p className="text-sm font-semibold text-white">
+            <p className="weather-title text-sm font-bold">
               {weather.condition}
-              <span className="ml-2 text-xs font-normal text-gray-400">
+              <span className="weather-meta ml-2 text-xs font-normal">
                 {weather.temperature_c}°C · {weather.humidity_pct}% humidity
               </span>
             </p>
-            <p className="text-xs capitalize text-gray-400">{weather.description}</p>
+            <p className="weather-desc text-xs capitalize">{weather.description}</p>
           </div>
         </div>
 
         {/* Escalation badge */}
         {isEscalated ? (
-          <div className={`rounded-lg px-3 py-1 text-xs font-bold ${style.badge}`}>
+          <div className="weather-badge rounded-lg px-3 py-1.5 text-xs font-bold">
             ⚠ Risk {weather.multiplier}x · Severity +{weather.severity_boost}
           </div>
         ) : (
-          <div className={`rounded-lg px-3 py-1 text-xs font-medium ${style.badge}`}>
+          <div className="weather-badge rounded-lg px-3 py-1.5 text-xs font-medium">
             ✓ Normal risk levels
           </div>
         )}
 
         {/* Rain detail */}
         {weather.rain_mm_1h > 0 && (
-          <span className="text-xs text-gray-400">
+          <span className="weather-rain-info text-xs font-semibold">
             🌧 {weather.rain_mm_1h} mm/h
           </span>
         )}
 
         {/* Escalation description */}
         {isEscalated && (
-          <p className="w-full text-xs text-gray-400 sm:w-auto sm:ml-auto">
-            <span className={`font-medium ${style.text}`}>Rain Alert</span> — Predictions &
+          <p className="weather-escalation-desc w-full text-xs sm:w-auto sm:ml-auto">
+            <span className="weather-alert-label font-bold mr-1">Rain Alert</span> — Predictions &
             severity scores auto-escalated for monsoon conditions
           </p>
         )}

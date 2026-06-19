@@ -24,20 +24,8 @@ def _dev_ingest() -> dict:
     return {"sub": "dev-ingest", "role": "ingest"}
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-    db: Session = Depends(get_db),
-) -> User:
+def _user_from_token(credentials: HTTPAuthorizationCredentials, db: Session) -> User:
     settings = get_settings()
-    if not settings.auth_enabled:
-        return _dev_officer()
-
-    if not credentials:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
     payload = decode_access_token(credentials.credentials)
     if not payload or "sub" not in payload:
         raise HTTPException(
@@ -62,28 +50,39 @@ def get_current_user(
     return user
 
 
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User:
+    settings = get_settings()
+    if credentials:
+        return _user_from_token(credentials, db)
+
+    if not settings.auth_enabled:
+        return _dev_officer()
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Not authenticated",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+
 def get_optional_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User | None:
     settings = get_settings()
+    if credentials:
+        try:
+            return _user_from_token(credentials, db)
+        except HTTPException:
+            return None
+
     if not settings.auth_enabled:
         return _dev_officer()
 
-    if not credentials:
-        return None
-    payload = decode_access_token(credentials.credentials)
-    if not payload or "sub" not in payload:
-        return None
-    user = db.query(User).filter(User.email == payload["sub"], User.is_active.is_(True)).first()
-    if not user and payload["sub"] == settings.officer_username:
-        return User(
-            id=0,
-            email=settings.officer_username,
-            full_name="Config Officer",
-            role=UserRole.OFFICER,
-        )
-    return user
+    return None
 
 
 def require_officer(user: User = Depends(get_current_user)) -> User:

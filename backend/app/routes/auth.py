@@ -1,4 +1,6 @@
 import logging
+from urllib.parse import urlencode
+
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
@@ -124,9 +126,22 @@ async def google_login(request: Request):
 
 
 @router.get("/google/callback")
-async def google_callback(code: str, db: Session = Depends(get_db)):
+async def google_callback(
+    code: str | None = None,
+    error: str | None = None,
+    db: Session = Depends(get_db),
+):
     """Google OAuth callback — creates or logs in user accounts."""
     settings = get_settings()
+    frontend = settings.frontend_url.rstrip("/")
+
+    if error:
+        logger.warning("Google OAuth denied: %s", error)
+        return RedirectResponse(f"{frontend}/login?error=google_oauth_denied")
+
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing authorization code")
+
     if not settings.google_client_id:
         raise HTTPException(status_code=503, detail="Google OAuth not configured")
 
@@ -135,13 +150,18 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
         client_secret=settings.google_client_secret,
         redirect_uri=settings.google_redirect_uri,
     )
-    token = await client.fetch_token(
-        "https://oauth2.googleapis.com/token",
-        code=code,
-    )
-    resp = await client.get(
-        "https://www.googleapis.com/oauth2/v3/userinfo",
-    )
+    try:
+        await client.fetch_token(
+            "https://oauth2.googleapis.com/token",
+            code=code,
+        )
+        resp = await client.get(
+            "https://www.googleapis.com/oauth2/v3/userinfo",
+        )
+    except Exception as exc:
+        logger.exception("Google OAuth token exchange failed: %s", exc)
+        return RedirectResponse(f"{frontend}/login?error=google_oauth_failed")
+
     profile = resp.json()
     email = profile.get("email", "").lower()
     if not email:
@@ -164,8 +184,8 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
     db.refresh(user)
 
     access = create_access_token({"sub": user.email, "role": user.role.value})
-    frontend = settings.frontend_url.rstrip("/")
-    return RedirectResponse(f"{frontend}/auth/callback?token={access}&role={user.role.value}")
+    params = urlencode({"token": access, "role": user.role.value})
+    return RedirectResponse(f"{frontend}/auth/callback?{params}")
 
 
 def seed_demo_users(db: Session) -> None:

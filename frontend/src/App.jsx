@@ -2,7 +2,8 @@ import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
-import Dashboard from './pages/Dashboard';
+import Homepage from './pages/Homepage';
+import About from './pages/About';
 import Predict from './pages/Predict';
 import Analytics from './pages/Analytics';
 import Corridors from './pages/Corridors';
@@ -32,6 +33,38 @@ function CorridorsRoute() {
   );
 }
 
+function HomepageRoute() {
+  const { user } = useAuth();
+  if (user?.role === 'officer') {
+    return (
+      <DashboardLayout>
+        <Homepage />
+      </DashboardLayout>
+    );
+  }
+  return (
+    <UserLayout>
+      <Homepage />
+    </UserLayout>
+  );
+}
+
+function AboutRoute() {
+  const { user } = useAuth();
+  if (user?.role === 'officer') {
+    return (
+      <DashboardLayout>
+        <About />
+      </DashboardLayout>
+    );
+  }
+  return (
+    <UserLayout>
+      <About />
+    </UserLayout>
+  );
+}
+
 export default function App() {
   return (
     <AuthProvider>
@@ -42,6 +75,8 @@ export default function App() {
           <Route path="/auth/callback" element={<AuthCallback />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="/" element={<HomepageRoute />} />
+            <Route path="/about" element={<AboutRoute />} />
             <Route path="/corridors" element={<CorridorsRoute />} />
           </Route>
 
@@ -54,7 +89,6 @@ export default function App() {
 
           <Route element={<ProtectedRoute officerOnly />}>
             <Route element={<DashboardLayout />}>
-              <Route path="/" element={<Dashboard />} />
               <Route path="/predict" element={<Predict />} />
               <Route path="/analytics" element={<Analytics />} />
               <Route path="/shift-planner" element={<ShiftPlanner />} />

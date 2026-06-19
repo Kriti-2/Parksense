@@ -11,26 +11,37 @@ export default function LiveStatusBar({ connected, status, lastTick }) {
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 text-xs">
+    <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium tracking-wide">
+      {/* Live Badge */}
       <span
-        className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium ${
+        className={`flex items-center gap-1.5 rounded-full px-3 py-1 shadow-sm transition-all duration-300 border backdrop-blur-md ${
           connected
-            ? 'bg-command-success/20 text-command-success'
-            : 'bg-command-danger/20 text-command-danger'
+            ? 'bg-sky-500/10 border-sky-500/25 text-sky-400 font-semibold'
+            : 'bg-rose-500/10 border-rose-500/25 text-rose-400 font-semibold'
         }`}
       >
-        <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'animate-pulse bg-command-success' : 'bg-command-danger'}`} />
+        <span className={`h-1.5 w-1.5 rounded-full ${connected ? 'animate-pulse bg-sky-400 shadow-[0_0_8px_#38bdf8]' : 'bg-rose-400'}`} />
         {connected ? 'LIVE' : 'RECONNECTING'}
       </span>
-      <span className="text-gray-500">
-        Traffic: <span className="text-gray-300">{sourceLabels[trafficSource] || trafficSource}</span>
+
+      {/* Traffic Info */}
+      <span className="status-bar-pill flex items-center gap-1.5 rounded-full px-3 py-1 border shadow-sm backdrop-blur-md">
+        <span className="status-bar-label">Traffic:</span>
+        <span className="status-bar-value font-semibold">{sourceLabels[trafficSource] || trafficSource}</span>
       </span>
-      <span className="text-gray-500">
-        Last hour: <span className="text-gray-300">{violationsLastHour} violations</span>
+
+      {/* Violations Info */}
+      <span className="status-bar-pill flex items-center gap-1.5 rounded-full px-3 py-1 border shadow-sm backdrop-blur-md">
+        <span className="status-bar-label">Last hour:</span>
+        <span className="status-bar-value font-semibold">{violationsLastHour} violations</span>
       </span>
-      <span className="text-gray-500">
-        Stream: <span className="text-gray-300">{bufferSize} events</span>
+
+      {/* Stream Info */}
+      <span className="status-bar-pill flex items-center gap-1.5 rounded-full px-3 py-1 border shadow-sm backdrop-blur-md">
+        <span className="status-bar-label">Stream:</span>
+        <span className="status-bar-value font-semibold">{bufferSize} events</span>
       </span>
     </div>
   );
 }
+

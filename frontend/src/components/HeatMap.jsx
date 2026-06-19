@@ -49,7 +49,7 @@ export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320p
     <div className={`overflow-hidden rounded-xl border border-command-border ${className}`}>
       <MapContainer center={BENGALURU_CENTER} zoom={12} scrollWheelZoom preferCanvas style={{ height: '100%' }}>
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Google Streets">
+          <LayersControl.BaseLayer name="Google Streets">
             <TileLayer
               attribution="&copy; Google Maps"
               url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -61,7 +61,7 @@ export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320p
               url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
             />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer name="Dark Mode">
+          <LayersControl.BaseLayer checked name="Dark Mode">
             <TileLayer
               attribution="&copy; CartoDB"
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

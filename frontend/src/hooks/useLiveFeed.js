@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, useRef } from 'react';
 const playedIds = new Set();
 
 export function playSpatialViolationSound(latitude, longitude, id) {
+  return; // Disabled by user request
   if (typeof window === 'undefined') return;
   
   // Check if audio alerts are enabled in localStorage

@@ -99,6 +99,7 @@ export default function CameraMonitor() {
   };
 
   const playAlertSound = () => {
+    return; // Disabled by user request
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioCtx.createOscillator();

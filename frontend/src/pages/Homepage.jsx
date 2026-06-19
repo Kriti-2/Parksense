@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
+import { useAuth } from '../context/AuthContext';
 import KPICard from '../components/KPICard';
 import HeatMap from '../components/HeatMap';
 import CongestionDebt from '../components/CongestionDebt';
@@ -213,6 +214,7 @@ function HeroSection({ analytics, lastTick, connected }) {
 
 // ── Main Homepage component ─────────────────────────────────────────────────
 export default function Homepage() {
+  const { isOfficer } = useAuth();
   const [heatmap, setHeatmap] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [predictions, setPredictions] = useState(null);
@@ -285,14 +287,15 @@ export default function Homepage() {
         setPredictions(pr.data);
         setLoading(false);
 
-        // Phase 2 — heavy data in background
-        const [hm, se, re, sh, co] = await Promise.all([
+        // Phase 2 — heavy data in background (fetch officer endpoints conditionally)
+        const promises = [
           api.getHeatmap(800),
-          api.getSeverityQueue(20),
+          isOfficer ? api.getSeverityQueue(20) : Promise.resolve({ data: null }),
           api.getRecidivism(),
-          api.getShiftPlanner(),
+          isOfficer ? api.getShiftPlanner() : Promise.resolve({ data: null }),
           api.getCorridors(),
-        ]);
+        ];
+        const [hm, se, re, sh, co] = await Promise.all(promises);
         setHeatmap(hm.data);
         setSeverity(se.data);
         setRecidivism(re.data);
@@ -304,7 +307,7 @@ export default function Homepage() {
       }
     }
     load();
-  }, []);
+  }, [isOfficer]);
 
   if (loading) {
     return (
@@ -361,8 +364,8 @@ export default function Homepage() {
           {[
             { id: 'overview', label: '📊 Live Overview' },
             { id: 'economic', label: '💸 Economic Impact' },
-            { id: 'operations', label: '🚨 Patrol Operations' },
-          ].map((tab) => (
+            isOfficer && { id: 'operations', label: '🚨 Patrol Operations' },
+          ].filter(Boolean).map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
@@ -414,9 +417,9 @@ export default function Homepage() {
         )}
 
         {activeTab === 'economic' && (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 animate-fadeIn">
+          <div className={`grid grid-cols-1 gap-6 ${isOfficer ? 'lg:grid-cols-2' : ''} animate-fadeIn`}>
             <CongestionDebt analytics={analytics} />
-            <ROICard shiftData={shiftData} analytics={analytics} />
+            {isOfficer && <ROICard shiftData={shiftData} analytics={analytics} />}
           </div>
         )}
 

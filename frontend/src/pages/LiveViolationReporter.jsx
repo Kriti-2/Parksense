@@ -414,7 +414,7 @@ export default function LiveViolationReporter() {
             <div className="h-64 rounded-lg overflow-hidden border border-command-border">
               <MapContainer center={BENGALURU_CENTER} zoom={11} scrollWheelZoom style={{ height: '100%' }}>
                 <LayersControl position="topright">
-                  <LayersControl.BaseLayer checked name="Google Streets">
+                  <LayersControl.BaseLayer name="Google Streets">
                     <TileLayer
                       attribution="&copy; Google Maps"
                       url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -426,7 +426,7 @@ export default function LiveViolationReporter() {
                       url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                     />
                   </LayersControl.BaseLayer>
-                  <LayersControl.BaseLayer name="Dark Mode">
+                  <LayersControl.BaseLayer checked name="Dark Mode">
                     <TileLayer
                       attribution="&copy; CartoDB"
                       url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

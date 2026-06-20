@@ -9,6 +9,6 @@ router = APIRouter(tags=["Heatmap"])
 
 @router.get("/heatmap")
 @limiter.limit(lambda: get_settings().rate_limit_public)
-def get_heatmap(request: Request, limit: int = Query(default=1500, le=5000)):
+def get_heatmap(request: Request, limit: int = Query(default=3000, le=10000)):
     store = get_data_store()
     return store.get_heatmap(limit=limit)

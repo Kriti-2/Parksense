@@ -12,7 +12,6 @@ import ShiftPlanner from './pages/ShiftPlanner';
 import CameraMonitor from './pages/CameraMonitor';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import AuthCallback from './pages/AuthCallback';
 import UserCongestion from './pages/UserCongestion';
 import UserLayout from './layouts/UserLayout';
 
@@ -72,7 +71,6 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
 
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomepageRoute />} />

@@ -289,7 +289,7 @@ export default function Homepage() {
 
         // Phase 2 — heavy data in background (fetch officer endpoints conditionally)
         const promises = [
-          api.getHeatmap(800),
+          api.getHeatmap(5000),
           isOfficer ? api.getSeverityQueue(20) : Promise.resolve({ data: null }),
           api.getRecidivism(),
           isOfficer ? api.getShiftPlanner() : Promise.resolve({ data: null }),

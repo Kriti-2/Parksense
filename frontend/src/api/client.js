@@ -37,6 +37,4 @@ export const api = {
   chat: (data) => client.post('/chat/', data),
 };
 
-export const getGoogleOAuthUrl = () => `${API_BASE}/auth/google/login`;
-
 export default client;

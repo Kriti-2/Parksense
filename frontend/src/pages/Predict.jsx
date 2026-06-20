@@ -56,7 +56,7 @@ export default function Predict() {
       const [pr, sh, hm] = await Promise.all([
         api.getPredictions(),
         api.getShiftPlanner(),
-        api.getHeatmap(800),
+        api.getHeatmap(5000),
       ]);
       setPredictions(pr.data);
       setShiftData(sh.data);

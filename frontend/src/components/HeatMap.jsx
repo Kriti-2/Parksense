@@ -69,7 +69,7 @@ export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320p
           </LayersControl.BaseLayer>
         </LayersControl>
         <FitBounds features={features} />
-        {features.slice(0, 600).map((feature, idx) => {
+        {features.map((feature, idx) => {
           const [lon, lat] = feature.geometry.coordinates;
           const zone = feature.properties.zone;
           const score = zoneIntensity[zone]?.congestion_score || 30;

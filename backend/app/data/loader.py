@@ -105,7 +105,7 @@ class ViolationDataStore:
         )
         self._recidivism_cache = self._build_recidivism_response(df)
         self._shift_planner_cache = build_shift_planner_response(df, self._forecast_cache)
-        self._heatmap_cache = build_heatmap_response(df, limit=1500, zone_intensity=None, zone_speeds=speeds)
+        self._heatmap_cache = build_heatmap_response(df, limit=5000, zone_intensity=None, zone_speeds=speeds)
         self._severity_cache = build_severity_response(recent if not recent.empty else df, limit=30)
         self._corridors_cache = build_corridors_response(recent if not recent.empty else df, recent_only=False)
         self._caches_warmed = True
@@ -145,12 +145,12 @@ class ViolationDataStore:
             self.warm_caches()
         return self._shift_planner_cache
 
-    def get_heatmap(self, limit: int = 1500) -> dict:
+    def get_heatmap(self, limit: int = 5000) -> dict:
         from app.services.heatmap_service import build_heatmap_response
 
         if self._heatmap_cache is None:
             self.warm_caches()
-        if limit == 1500:
+        if limit == 5000:
             return self._heatmap_cache
         return build_heatmap_response(self.load(), limit=limit)
 
@@ -201,7 +201,7 @@ class ViolationDataStore:
         self._severity_cache = severity
         self._heatmap_cache = build_heatmap_response(
             recent_df if not recent_df.empty else full_df,
-            limit=1500,
+            limit=5000,
             zone_intensity=zone_intensity,
         )
 

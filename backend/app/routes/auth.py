@@ -1,9 +1,6 @@
 import logging
-from urllib.parse import urlencode
 
-from authlib.integrations.httpx_client import AsyncOAuth2Client
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
@@ -103,89 +100,7 @@ def me(user: User = Depends(get_current_user)):
     return user
 
 
-@router.get("/google/login")
-async def google_login(request: Request):
-    """User OAuth — redirects to Google sign-in."""
-    settings = get_settings()
-    if not settings.google_client_id:
-        raise HTTPException(
-            status_code=503,
-            detail="Google OAuth not configured. Use user demo login or set GOOGLE_CLIENT_ID.",
-        )
-    redirect_uri = settings.google_redirect_uri
-    client = AsyncOAuth2Client(
-        client_id=settings.google_client_id,
-        client_secret=settings.google_client_secret,
-        redirect_uri=redirect_uri,
-    )
-    uri, _ = client.create_authorization_url(
-        "https://accounts.google.com/o/oauth2/v2/auth",
-        scope="openid email profile",
-    )
-    return RedirectResponse(uri)
 
-
-@router.get("/google/callback")
-async def google_callback(
-    code: str | None = None,
-    error: str | None = None,
-    db: Session = Depends(get_db),
-):
-    """Google OAuth callback — creates or logs in user accounts."""
-    settings = get_settings()
-    frontend = settings.frontend_url.rstrip("/")
-
-    if error:
-        logger.warning("Google OAuth denied: %s", error)
-        return RedirectResponse(f"{frontend}/login?error=google_oauth_denied")
-
-    if not code:
-        raise HTTPException(status_code=400, detail="Missing authorization code")
-
-    if not settings.google_client_id:
-        raise HTTPException(status_code=503, detail="Google OAuth not configured")
-
-    client = AsyncOAuth2Client(
-        client_id=settings.google_client_id,
-        client_secret=settings.google_client_secret,
-        redirect_uri=settings.google_redirect_uri,
-    )
-    try:
-        await client.fetch_token(
-            "https://oauth2.googleapis.com/token",
-            code=code,
-        )
-        resp = await client.get(
-            "https://www.googleapis.com/oauth2/v3/userinfo",
-        )
-    except Exception as exc:
-        logger.exception("Google OAuth token exchange failed: %s", exc)
-        return RedirectResponse(f"{frontend}/login?error=google_oauth_failed")
-
-    profile = resp.json()
-    email = profile.get("email", "").lower()
-    if not email:
-        raise HTTPException(status_code=400, detail="Google account has no email")
-
-    user = db.query(User).filter(User.email == email).first()
-    if not user:
-        user = User(
-            email=email,
-            full_name=profile.get("name", "User"),
-            role=UserRole.USER,
-            oauth_provider="google",
-            oauth_subject=profile.get("sub"),
-        )
-        db.add(user)
-    else:
-        user.oauth_provider = "google"
-        user.oauth_subject = profile.get("sub")
-    db.commit()
-    db.refresh(user)
-
-    access = create_access_token({"sub": user.email, "role": user.role.value})
-    params = urlencode({"token": access, "role": user.role.value})
-    return RedirectResponse(f"{frontend}/auth/callback?{params}")
 
 
 def seed_demo_users(db: Session) -> None:

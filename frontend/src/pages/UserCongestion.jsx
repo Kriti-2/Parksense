@@ -7,7 +7,7 @@ import TiltCard from '../components/TiltCard';
 import { useTranslation, TranslatedText } from '../context/LanguageContext';
 
 const BENGALURU_CENTER = [12.9716, 77.5946];
-const ADVISORY_COLORS = { red: '#C27A7A', orange: '#D29C42', green: '#486E5D' };
+const ADVISORY_COLORS = { red: '#A33B3B', orange: '#C0613F', green: '#3D5A4A' };
 
 const LOCATIONS = [
   { name: 'Silk Board Junction', coords: [12.9177, 77.6225] },
@@ -277,7 +277,7 @@ export default function UserCongestion() {
           <div className="h-[300px] sm:h-[384px] overflow-hidden rounded-xl border border-command-border interactive-card shadow-sm relative text-left">
             <MapContainer center={BENGALURU_CENTER} zoom={11} style={{ height: '100%' }}>
               <LayersControl position="topright">
-                <LayersControl.BaseLayer name="Google Streets">
+                <LayersControl.BaseLayer checked name="Google Streets">
                   <TileLayer
                     attribution="&copy; Google Maps"
                     url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -289,7 +289,7 @@ export default function UserCongestion() {
                     url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
                   />
                 </LayersControl.BaseLayer>
-                <LayersControl.BaseLayer checked name="Dark Mode">
+                <LayersControl.BaseLayer name="Dark Mode">
                   <TileLayer
                     attribution="&copy; CartoDB"
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -324,13 +324,13 @@ export default function UserCongestion() {
                 <>
                   <Polyline 
                     positions={calculatedRoutes.standard} 
-                    pathOptions={{ color: '#C27A7A', weight: 5, opacity: 0.8 }}
+                    pathOptions={{ color: '#A33B3B', weight: 5, opacity: 0.8 }}
                   >
                     <Popup><TranslatedText text="Standard Route (More delay)" /></Popup>
                   </Polyline>
                   <Polyline 
                     positions={calculatedRoutes.eco} 
-                    pathOptions={{ color: '#486E5D', weight: 6, opacity: 0.95, dashArray: '10, 10' }}
+                    pathOptions={{ color: '#4C6E5D', weight: 6, opacity: 0.95, dashArray: '10, 10' }}
                   >
                     <Popup><TranslatedText text="Eco-Smart Route (Fluid & fuel-efficient)" /></Popup>
                   </Polyline>
@@ -342,11 +342,11 @@ export default function UserCongestion() {
             {calculatedRoutes && (
               <div className="absolute bottom-4 left-4 z-[400] bg-white/95 border border-command-border/50 p-2.5 rounded-lg shadow-md flex gap-4 text-[10px] font-bold uppercase tracking-wider text-gray-800">
                 <div className="flex items-center gap-1.5">
-                  <span className="h-3 w-6 inline-block bg-[#C27A7A] rounded" />
+                  <span className="h-3 w-6 inline-block bg-[#A33B3B] rounded" />
                   <span><TranslatedText text="Standard" /></span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="h-3 w-6 inline-block bg-[#486E5D] border-dashed border border-white rounded" />
+                  <span className="h-3 w-6 inline-block bg-[#4C6E5D] border-dashed border border-white rounded" />
                   <span><TranslatedText text="Eco-Smart" /></span>
                 </div>
               </div>

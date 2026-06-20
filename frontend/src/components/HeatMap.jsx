@@ -22,11 +22,12 @@ function FitBounds({ features }) {
 }
 
 function intensityColor(score) {
-  if (score >= 75) return '#C27A7A'; // Danger rose
-  if (score >= 50) return '#E6CCA0'; // Peach warning
-  if (score >= 25) return '#C0E1D2'; // Warm sage light
-  return '#9FC9BA'; // Safe sage
+  if (score >= 75) return '#A33B3B'; // Deep Crimson Burgundy
+  if (score >= 50) return '#C0613F'; // Rich Terracotta Copper
+  if (score >= 25) return '#3D5A4A'; // Deep Forest Sage
+  return '#4C6E5D'; // Premium Sage Green
 }
+
 
 export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320px] sm:h-[400px] md:h-[480px]' }) {
   const features = data?.features || [];
@@ -49,7 +50,7 @@ export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320p
     <div className={`overflow-hidden rounded-xl border border-command-border ${className}`}>
       <MapContainer center={BENGALURU_CENTER} zoom={12} scrollWheelZoom preferCanvas style={{ height: '100%' }}>
         <LayersControl position="topright">
-          <LayersControl.BaseLayer name="Google Streets">
+          <LayersControl.BaseLayer checked name="Google Streets">
             <TileLayer
               attribution="&copy; Google Maps"
               url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
@@ -61,7 +62,7 @@ export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320p
               url="https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}"
             />
           </LayersControl.BaseLayer>
-          <LayersControl.BaseLayer checked name="Dark Mode">
+          <LayersControl.BaseLayer name="Dark Mode">
             <TileLayer
               attribution="&copy; CartoDB"
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"

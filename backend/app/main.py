@@ -199,14 +199,13 @@ def create_app() -> FastAPI:
     @limiter.exempt
     def health():
         store = get_data_store()
-        df = store.load()
-        live = get_realtime_engine().get_status()
+        violations_loaded = len(store._df) if store._df is not None else 0
         return {
             "status": "healthy",
-            "violations_loaded": len(df),
+            "violations_loaded": violations_loaded,
             "auth_enabled": settings.auth_enabled,
             "celery_enabled": settings.celery_enabled,
-            "live": live,
+            "loading_in_progress": store._df is None,
         }
 
     return app

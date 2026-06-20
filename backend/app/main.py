@@ -80,11 +80,25 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
 
+    import os
     store = get_data_store()
-    store.load()
-    store.warm_caches()
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        store.load()
+        store.warm_caches()
+        get_realtime_engine().tick()
+    else:
+        def preload_and_warm():
+            try:
+                logger.info("Starting background preloading & cache warming...")
+                store.load()
+                store.warm_caches()
+                get_realtime_engine().tick()
+                logger.info("Background preloading & cache warming completed.")
+            except Exception as exc:
+                logger.error("Background preloading failed: %s", exc)
 
-    get_realtime_engine().tick()
+        import threading
+        threading.Thread(target=preload_and_warm, daemon=True).start()
 
     import os
     if not os.getenv("PYTEST_CURRENT_TEST"):

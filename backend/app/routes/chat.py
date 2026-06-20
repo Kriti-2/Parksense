@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from fastapi import APIRouter, HTTPException, Request
@@ -212,27 +213,79 @@ async def ask_assistant(request: Request, payload: ChatMessage):
     # Call Gemini API
     client = get_genai_client(settings.gemini_api_key)
     
+    # Helper to check if an exception represents a 429 / rate limit
+    def is_rate_limit_error(e: Exception) -> bool:
+        err_msg = str(e).lower()
+        return (
+            "429" in err_msg or
+            "too many requests" in err_msg or
+            "resource_exhausted" in err_msg or
+            "resource exhausted" in err_msg or
+            getattr(e, "code", None) == 429 or
+            getattr(e, "status_code", None) == 429 or
+            str(getattr(e, "status", "")).lower() in ("too many requests", "resource_exhausted")
+        )
+
     if payload.stream:
         async def response_generator():
-            try:
-                async for chunk in await client.aio.models.generate_content_stream(
-                    model='gemini-2.5-flash',
-                    contents=prompt,
-                ):
-                    if chunk.text:
-                        yield chunk.text
-            except Exception as e:
-                logger.error(f"Error calling Gemini API stream: {e}")
-                yield f"\n[Error: {str(e)}]"
+            max_retries = 3
+            retry_delay = 1.5
+            stream = None
+            for attempt in range(max_retries):
+                try:
+                    stream = await client.aio.models.generate_content_stream(
+                        model='gemini-2.5-flash',
+                        contents=prompt,
+                    )
+                    break
+                except Exception as e:
+                    if is_rate_limit_error(e) and attempt < max_retries - 1:
+                        logger.warning(f"Gemini API rate limit hit. Retrying in {retry_delay}s... (Attempt {attempt + 1}/{max_retries})")
+                        await asyncio.sleep(retry_delay)
+                        retry_delay *= 2
+                        continue
+                    else:
+                        logger.error(f"Error calling Gemini API stream: {e}")
+                        if is_rate_limit_error(e):
+                            yield "\n[Error: The AI assistant is currently receiving too many requests. Please wait a moment before trying again.]"
+                        else:
+                            yield f"\n[Error: {str(e)}]"
+                        return
+
+            if stream:
+                try:
+                    async for chunk in stream:
+                        if chunk.text:
+                            yield chunk.text
+                except Exception as e:
+                    logger.error(f"Error during Gemini API stream consumption: {e}")
+                    if is_rate_limit_error(e):
+                        yield "\n[Error: The AI assistant is currently receiving too many requests. Please wait a moment before trying again.]"
+                    else:
+                        yield f"\n[Error: {str(e)}]"
 
         return StreamingResponse(response_generator(), media_type="text/plain")
     else:
-        try:
-            response = await client.aio.models.generate_content(
-                model='gemini-2.5-flash',
-                contents=prompt,
-            )
-            return {"response": response.text}
-        except Exception as e:
-            logger.error(f"Error calling Gemini API: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+        max_retries = 3
+        retry_delay = 1.5
+        for attempt in range(max_retries):
+            try:
+                response = await client.aio.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                )
+                return {"response": response.text}
+            except Exception as e:
+                if is_rate_limit_error(e) and attempt < max_retries - 1:
+                    logger.warning(f"Gemini API rate limit hit in non-stream. Retrying in {retry_delay}s... (Attempt {attempt + 1}/{max_retries})")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                else:
+                    logger.error(f"Error calling Gemini API: {e}")
+                    if is_rate_limit_error(e):
+                        raise HTTPException(
+                            status_code=429,
+                            detail="The AI assistant is currently receiving too many requests. Please wait a moment before trying again."
+                        )
+                    raise HTTPException(status_code=500, detail=str(e))

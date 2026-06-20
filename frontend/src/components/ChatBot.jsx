@@ -229,19 +229,27 @@ export default function ChatBot({ context = 'dashboard' }) {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 dark:bg-gray-900/30">
-            {messages.map((msg, idx) => (
-              <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div
-                  className={`max-w-[80%] p-3 rounded-2xl text-sm ${
-                    msg.role === 'user'
-                      ? 'bg-[#5E8599] text-white rounded-tr-none'
-                      : 'bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-tl-none shadow-sm'
-                  }`}
-                >
-                  {msg.content}
+            {messages.map((msg, idx) => {
+              const isError = msg.content.includes('[Error:');
+              const cleanContent = isError 
+                ? msg.content.replace('[Error: ', '').replace('[Error:', '').replace(']', '') 
+                : msg.content;
+              return (
+                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    className={`max-w-[80%] p-3 rounded-2xl text-sm ${
+                      msg.role === 'user'
+                        ? 'bg-[#5E8599] text-white rounded-tr-none'
+                        : isError
+                        ? 'bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 rounded-tl-none shadow-sm'
+                        : 'bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-tl-none shadow-sm'
+                    }`}
+                  >
+                    {cleanContent}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 text-gray-500 max-w-[80%] p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">

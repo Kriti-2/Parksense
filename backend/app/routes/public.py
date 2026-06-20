@@ -262,10 +262,37 @@ async def translate_text(payload: TranslationRequest):
             f"Text to translate: \"{text}\"\n\n"
             "Only output the translated text. Do not include quotes, markdown formatting, explanations, or backticks."
         )
-        response = await client.aio.models.generate_content(
-            model='gemini-2.5-flash',
-            contents=prompt,
-        )
+        
+        import asyncio
+        max_retries = 3
+        retry_delay = 1.0
+        response = None
+        for attempt in range(max_retries):
+            try:
+                response = await client.aio.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=prompt,
+                )
+                break
+            except Exception as e:
+                err_msg = str(e).lower()
+                is_rate_limit = (
+                    "429" in err_msg or
+                    "too many requests" in err_msg or
+                    "resource_exhausted" in err_msg or
+                    "resource exhausted" in err_msg or
+                    getattr(e, "code", None) == 429 or
+                    getattr(e, "status_code", None) == 429
+                )
+                if is_rate_limit and attempt < max_retries - 1:
+                    import logging
+                    logging.getLogger(__name__).warning(f"Translate endpoint hit rate limit. Retrying in {retry_delay}s... (Attempt {attempt + 1}/{max_retries})")
+                    await asyncio.sleep(retry_delay)
+                    retry_delay *= 2
+                    continue
+                else:
+                    raise e
+
         translated = response.text.strip()
         if translated.startswith('"') and translated.endswith('"'):
             translated = translated[1:-1].strip()

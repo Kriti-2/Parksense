@@ -17,6 +17,7 @@ def auth_client(monkeypatch):
     monkeypatch.setenv("WEATHER_API_KEY", "")
     monkeypatch.setenv("TOMTOM_API_KEY", "")
     monkeypatch.setenv("GOOGLE_MAPS_API_KEY", "")
+    monkeypatch.setenv("VIOLATIONS_CSV_PATH", "non_existent_file.csv")
     # Ensure test database starts clean
     from pathlib import Path
     test_db_path = Path(__file__).resolve().parent.parent / "data" / "test.db"

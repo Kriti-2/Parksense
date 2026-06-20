@@ -27,7 +27,11 @@ async def test_stream():
             async for chunk in stream:
                 print("Chunk:", chunk.text)
         except Exception as e2:
-            print("Error with await:", e2)
+            print("Error with await:", type(e2), repr(str(e2)))
+            err_msg = str(e2)
+            print("'429' in err_msg:", '429' in err_msg)
+            print("'Too Many Requests' in err_msg:", 'Too Many Requests' in err_msg)
+            print("'RESOURCE_EXHAUSTED' in err_msg:", 'RESOURCE_EXHAUSTED' in err_msg)
 
 if __name__ == "__main__":
     asyncio.run(test_stream())

@@ -362,7 +362,7 @@ export default function UserCongestion() {
             <div className="flex items-center gap-2 text-left">
               <span className="text-lg">🧭</span>
               <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wider"><TranslatedText text="Eco-Smart Trip Planner" /></h3>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider"><TranslatedText text="Eco-Smart Commute" /></h3>
                 <p className="text-[10px] text-command-muted font-medium"><TranslatedText text="Bypass congested gridlock and reduce CO2 emissions automatically" /></p>
               </div>
             </div>

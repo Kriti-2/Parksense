@@ -2,7 +2,7 @@ export const translations = {
   en: {
     // Navigation
     home: "Home",
-    tripPlanner: "Trip Planner",
+    tripPlanner: "Smart Commute",
     reportViolation: "Report Violation",
     about: "About",
     predict: "Predict",
@@ -72,7 +72,7 @@ export const translations = {
   hi: {
     // Navigation
     home: "होम",
-    tripPlanner: "यात्रा नियोजक",
+    tripPlanner: "स्मार्ट कम्यूट",
     reportViolation: "उल्लंघन रिपोर्ट",
     about: "हमारे बारे में",
     predict: "पूर्वानुमान",
@@ -142,7 +142,7 @@ export const translations = {
   kn: {
     // Navigation
     home: "ಮುಖಪುಟ",
-    tripPlanner: "ಪ್ರಯಾಣ ಯೋಜಕ",
+    tripPlanner: "ಸ್ಮಾರ್ಟ್ ಕಮ್ಯೂಟ್",
     reportViolation: "ನಿಯಮ ಉಲ್ಲಂಘನೆ ವರದಿ",
     about: "ನಮ್ಮ ಬಗ್ಗೆ",
     predict: "ಮುನ್ಸೂಚನೆ",

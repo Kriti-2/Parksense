@@ -109,6 +109,36 @@ export function LanguageSelector() {
   );
 }
 
+// Global translation queue to prevent concurrent API spam to Gemini (free-tier rate limit is 15 RPM)
+const translationQueue = [];
+let isProcessingQueue = false;
+
+const processNextTranslation = async () => {
+  if (translationQueue.length === 0) {
+    isProcessingQueue = false;
+    return;
+  }
+  isProcessingQueue = true;
+  const { text, lang, resolve, reject } = translationQueue.shift();
+  try {
+    const res = await api.translate(text, lang);
+    resolve(res);
+  } catch (err) {
+    reject(err);
+  }
+  // Throttling: Wait 350ms before the next translation request to prevent rate limit exhaustion
+  setTimeout(processNextTranslation, 350);
+};
+
+const queuedTranslate = (text, lang) => {
+  return new Promise((resolve, reject) => {
+    translationQueue.push({ text, lang, resolve, reject });
+    if (!isProcessingQueue) {
+      processNextTranslation();
+    }
+  });
+};
+
 export function TranslatedText({ text }) {
   const { lang } = useTranslation();
   
@@ -152,8 +182,8 @@ export function TranslatedText({ text }) {
       console.warn(e);
     }
 
-    // Fetch dynamic translation
-    api.translate(text, lang)
+    // Fetch dynamic translation via throttled queue
+    queuedTranslate(text, lang)
       .then((res) => {
         const trans = res.data?.translated_text || text;
         try {

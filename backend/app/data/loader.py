@@ -25,6 +25,7 @@ class ViolationDataStore:
     _heatmap_cache: dict | None = None
     _severity_cache: dict | None = None
     _corridors_cache: dict | None = None
+    _trends_cache: list[dict] | None = None
     _caches_warmed: bool = False
 
     def __new__(cls):
@@ -64,6 +65,7 @@ class ViolationDataStore:
         self._heatmap_cache = None
         self._severity_cache = None
         self._corridors_cache = None
+        self._trends_cache = None
         self._caches_warmed = False
 
     def warm_caches(self) -> None:
@@ -75,7 +77,7 @@ class ViolationDataStore:
         df = self.load()
 
         from app.models.forecaster import ParkPredictForecaster
-        from app.services.analytics_service import build_analytics_response
+        from app.services.analytics_service import build_analytics_response, _build_violation_trends
         from app.services.shift_planner import build_shift_planner_response
         from app.services.heatmap_service import build_heatmap_response
         from app.services.severity_service import build_severity_response
@@ -94,6 +96,7 @@ class ViolationDataStore:
         traffic = TrafficService()
         speeds = traffic.get_zone_speeds(recent)
         ref = get_reference_time(df, use_wall_clock=True)
+        self._trends_cache = _build_violation_trends(df, reference=ref)
 
         self._analytics_cache = build_analytics_response(
             df,
@@ -102,6 +105,7 @@ class ViolationDataStore:
             reference=ref,
             live=True,
             traffic_meta=traffic.last_meta,
+            trends_cache=self._trends_cache,
         )
         self._recidivism_cache = self._build_recidivism_response(df)
         self._shift_planner_cache = build_shift_planner_response(df, self._forecast_cache)
@@ -196,6 +200,7 @@ class ViolationDataStore:
             reference=ref,
             live=True,
             traffic_meta=traffic_meta,
+            trends_cache=self._trends_cache,
         )
         self._corridors_cache = corridors
         self._severity_cache = severity
@@ -204,26 +209,6 @@ class ViolationDataStore:
             limit=5000,
             zone_intensity=zone_intensity,
         )
-
-        # Re-run forecaster, shift planner, and recidivism caching on combined live data
-        from app.services.live_buffer import get_live_buffer
-        from app.models.forecaster import ParkPredictForecaster
-        from app.services.shift_planner import build_shift_planner_response
-
-        live = get_live_buffer().to_dataframe()
-        if not live.empty:
-            if "violation_types" not in live.columns and "violation_type" in live.columns:
-                live["violation_types"] = live["violation_type"]
-            combined_df = pd.concat([full_df, live], ignore_index=True)
-            # Ensure combined created_datetime is UTC timezone-aware
-            combined_df["created_datetime"] = pd.to_datetime(combined_df["created_datetime"], utc=True, errors="coerce")
-        else:
-            combined_df = full_df
-
-        forecaster = ParkPredictForecaster(use_prophet=False)
-        self._forecast_cache = forecaster.forecast(combined_df)
-        self._shift_planner_cache = build_shift_planner_response(combined_df, self._forecast_cache)
-        self._recidivism_cache = self._build_recidivism_response(combined_df)
 
     @staticmethod
     def _build_recidivism_response(df: pd.DataFrame) -> dict:

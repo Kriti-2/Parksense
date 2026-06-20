@@ -16,6 +16,7 @@ def build_analytics_response(
     reference: pd.Timestamp | None = None,
     live: bool = False,
     traffic_meta: dict | None = None,
+    trends_cache: list[dict] | None = None,
 ) -> dict:
     ref = reference or get_reference_time(df, use_wall_clock=live)
     recent = recent_df if recent_df is not None else df
@@ -47,7 +48,7 @@ def build_analytics_response(
     total_daily = econ.total_daily_loss(economic_losses)
 
     zone_breakdown = _build_zone_breakdown(recent if live and not recent.empty else df)
-    violation_trends = _build_violation_trends(df, reference=ref)
+    violation_trends = trends_cache if trends_cache is not None else _build_violation_trends(df, reference=ref)
 
     response = {
         "generated_at": ts.isoformat(),

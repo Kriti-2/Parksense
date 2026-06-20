@@ -8,7 +8,6 @@ const CYCLE_DURATION = 8000; // ms between auto-cycle
 export default function NoticesBanner() {
   const [notices, setNotices] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [dismissedIds, setDismissedIds] = useState(() => {
     try {
       const s = localStorage.getItem('margsense_dismissed_notices');
@@ -19,25 +18,11 @@ export default function NoticesBanner() {
   });
   const [selectedNotice, setSelectedNotice] = useState(null);
   const [isListViewOpen, setIsListViewOpen] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   // Language & HUD
   const { lang, changeLanguage } = useTranslation();
-  const [isCrazyMode, setIsCrazyMode] = useState(() => {
-    try {
-      const s = localStorage.getItem('margsense_crazy_mode');
-      return s !== null ? JSON.parse(s) : true;
-    } catch {
-      return true;
-    }
-  });
-  const [isMuted, setIsMuted] = useState(() => {
-    try {
-      const s = localStorage.getItem('margsense_mute_mode');
-      return s !== null ? JSON.parse(s) : false;
-    } catch {
-      return false;
-    }
-  });
 
   // ── Active notices ──
   const activeNotices = useMemo(
@@ -73,7 +58,6 @@ export default function NoticesBanner() {
       };
     }
   }, []);
-
 
   const stopSpeaking = useCallback(() => {
     if (synthRef.current) {
@@ -221,59 +205,9 @@ export default function NoticesBanner() {
     };
   }, []);
 
-  // Interactive: expanded inline preview on hover
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  // Progress bar for auto-cycle timer
   const cycleTimerRef = useRef(null);
-
   const navigate = useNavigate();
   const location = useLocation();
-
-  // ── Web Audio Synth ──
-  const playSynthSound = useCallback((type) => {
-    if (isMuted) return;
-    try {
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (!AC) return;
-      const ctx = new AC();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      if (type === 'click') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.07);
-        gain.gain.setValueAtTime(0.04, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.07);
-        osc.start(); osc.stop(ctx.currentTime + 0.07);
-      } else if (type === 'warning') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(320, ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(480, ctx.currentTime + 0.15);
-        gain.gain.setValueAtTime(0.05, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.22);
-        osc.start(); osc.stop(ctx.currentTime + 0.22);
-      } else if (type === 'popup') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(440, ctx.currentTime);
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.04);
-        osc.frequency.setValueAtTime(1320, ctx.currentTime + 0.08);
-        gain.gain.setValueAtTime(0.03, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
-        osc.start(); osc.stop(ctx.currentTime + 0.2);
-      } else if (type === 'success') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(660, ctx.currentTime);
-        osc.frequency.setValueAtTime(990, ctx.currentTime + 0.05);
-        gain.gain.setValueAtTime(0.04, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-        osc.start(); osc.stop(ctx.currentTime + 0.1);
-      }
-    } catch { /* silent */ }
-  }, [isMuted]);
 
   useEffect(() => {
     let active = true;
@@ -293,8 +227,6 @@ export default function NoticesBanner() {
     };
   }, []);
 
-
-
   // ── Auto-cycle with timer ──
   useEffect(() => {
     if (activeNotices.length <= 1 || isPaused || selectedNotice || isListViewOpen || isExpanded || isSpeaking) {
@@ -311,92 +243,82 @@ export default function NoticesBanner() {
     };
   }, [activeNotices.length, isPaused, selectedNotice, isListViewOpen, isExpanded, currentIndex, isSpeaking]);
 
-  // ── Translation dictionary ──
-
-
   // ── Handlers ──
-  const goNext = (e) => { e?.stopPropagation(); playSynthSound('click'); setCurrentIndex((p) => (p + 1) % activeNotices.length); };
-  const goPrev = (e) => { e?.stopPropagation(); playSynthSound('click'); setCurrentIndex((p) => (p === 0 ? activeNotices.length - 1 : p - 1)); };
+  const goNext = (e) => { e?.stopPropagation(); setCurrentIndex((p) => (p + 1) % activeNotices.length); };
+  const goPrev = (e) => { e?.stopPropagation(); setCurrentIndex((p) => (p === 0 ? activeNotices.length - 1 : p - 1)); };
 
   const dismiss = (e, id) => {
     e?.stopPropagation();
-    playSynthSound('success');
     const next = [...dismissedIds, id];
     setDismissedIds(next);
     localStorage.setItem('margsense_dismissed_notices', JSON.stringify(next));
   };
 
   const toggleLang = () => {
-    playSynthSound('click');
     const next = lang === 'en' ? 'hi' : lang === 'hi' ? 'kn' : 'en';
     changeLanguage(next);
   };
 
-  const toggleHud = () => {
-    const next = !isCrazyMode;
-    setIsCrazyMode(next);
-    playSynthSound('success');
-    localStorage.setItem('margsense_crazy_mode', JSON.stringify(next));
-  };
-
-  const toggleMute = () => {
-    const next = !isMuted;
-    setIsMuted(next);
-    localStorage.setItem('margsense_mute_mode', JSON.stringify(next));
-    if (!next) {
-      setTimeout(() => {
-        try {
-          const AC = window.AudioContext || window.webkitAudioContext;
-          if (!AC) return;
-          const ctx = new AC(); const o = ctx.createOscillator(); const g = ctx.createGain();
-          o.connect(g); g.connect(ctx.destination); o.type = 'sine';
-          o.frequency.setValueAtTime(600, ctx.currentTime);
-          g.gain.setValueAtTime(0.04, ctx.currentTime);
-          g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
-          o.start(); o.stop(ctx.currentTime + 0.1);
-        } catch { /* silent */ }
-      }, 50);
-    }
-  };
-
   const deepLink = (notice) => {
-    playSynthSound('success');
     setSelectedNotice(null);
     setIsListViewOpen(false);
     if (notice.type === 'traffic') navigate('/congestion');
   };
 
   // ── Bail if nothing to show ──
-  if (activeNotices.length === 0) return null;
+  if (activeNotices.length === 0) {
+    if (notices.length === 0) return null;
+    return (
+      <div className="bg-gray-50/80 dark:bg-gray-900/40 border-b border-gray-200/50 dark:border-white/5 py-2 px-4 text-center text-xs text-gray-505 dark:text-gray-400">
+        <span>All system alerts cleared.</span>
+        <button 
+          onClick={() => { setDismissedIds([]); localStorage.removeItem('margsense_dismissed_notices'); }}
+          className="text-[#5E8599] dark:text-[#789FAF] font-bold hover:underline cursor-pointer ml-1.5"
+        >
+          Restore Alerts
+        </button>
+      </div>
+    );
+  }
   const tr = translate(cur);
-  const t = tr[lang] || tr['en']; // current language text
 
   // ── Theme ──
   const getTheme = (n) => {
     const h = n.urgency === 'high';
-    if (n.type === 'traffic') return {
-      border: h ? 'border-red-500/50' : 'border-amber-500/40',
-      bg: h ? 'bg-red-500/[0.06]' : 'bg-amber-500/[0.04]',
-      accent: h ? 'border-l-red-500' : 'border-l-amber-500',
-      badge: h ? 'bg-red-500/15 text-red-400 border-red-500/25' : 'bg-amber-500/15 text-amber-400 border-amber-500/25',
-      glow: h ? 'text-red-400 drop-shadow-[0_0_6px_rgba(239,68,68,0.35)]' : 'text-amber-300',
-      dot: h ? 'bg-red-500 shadow-[0_0_10px_#ef4444]' : 'bg-amber-500 shadow-[0_0_10px_#f59e0b]',
-      progressBar: h ? 'bg-red-500' : 'bg-amber-500',
-    };
-    if (n.type === 'circular') return {
-      border: h ? 'border-purple-500/50' : 'border-indigo-500/40',
-      bg: h ? 'bg-purple-500/[0.06]' : 'bg-indigo-500/[0.04]',
-      accent: h ? 'border-l-purple-500' : 'border-l-indigo-500',
-      badge: h ? 'bg-purple-500/15 text-purple-400 border-purple-500/25' : 'bg-indigo-500/15 text-indigo-400 border-indigo-500/25',
-      glow: h ? 'text-purple-400 drop-shadow-[0_0_6px_rgba(168,85,247,0.35)]' : 'text-indigo-300',
-      dot: h ? 'bg-purple-500 shadow-[0_0_10px_#a855f7]' : 'bg-indigo-500 shadow-[0_0_10px_#6366f1]',
-      progressBar: h ? 'bg-purple-500' : 'bg-indigo-500',
-    };
+    if (n.type === 'traffic') {
+      return {
+        bg: h 
+          ? 'bg-red-50/90 dark:bg-red-950/20 border-red-100 dark:border-red-900/30' 
+          : 'bg-amber-50/90 dark:bg-amber-950/20 border-amber-100 dark:border-amber-900/30',
+        text: h ? 'text-red-900 dark:text-red-100' : 'text-amber-900 dark:text-amber-100',
+        accent: h ? 'border-l-red-500' : 'border-l-amber-500',
+        badge: h 
+          ? 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/50' 
+          : 'bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50',
+        dot: h ? 'bg-red-500' : 'bg-amber-500',
+        progressBar: h ? 'bg-red-500' : 'bg-amber-500',
+      };
+    }
+    if (n.type === 'circular') {
+      return {
+        bg: h 
+          ? 'bg-purple-50/90 dark:bg-purple-950/20 border-purple-100 dark:border-purple-900/30' 
+          : 'bg-indigo-50/90 dark:bg-indigo-950/20 border-indigo-100 dark:border-indigo-900/30',
+        text: h ? 'text-purple-900 dark:text-purple-100' : 'text-indigo-900 dark:text-indigo-100',
+        accent: h ? 'border-l-purple-500' : 'border-l-indigo-500',
+        badge: h 
+          ? 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900/50' 
+          : 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-900/50',
+        dot: h ? 'bg-purple-500' : 'bg-indigo-500',
+        progressBar: h ? 'bg-purple-500' : 'bg-indigo-500',
+      };
+    }
     return {
-      border: 'border-blue-500/40', bg: 'bg-blue-500/[0.04]',
+      bg: 'bg-blue-50/90 dark:bg-blue-950/20 border-blue-100 dark:border-blue-900/30',
+      text: 'text-blue-900 dark:text-blue-100',
       accent: 'border-l-blue-500',
-      badge: 'bg-blue-500/15 text-blue-400 border-blue-500/25',
-      glow: 'text-blue-300', dot: 'bg-blue-500 shadow-[0_0_10px_#3b82f6]',
+      badge: 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900/50',
+      dot: 'bg-blue-500',
       progressBar: 'bg-blue-500',
     };
   };
@@ -406,36 +328,16 @@ export default function NoticesBanner() {
     <>
       {/* ═══════ MAIN BANNER ═══════ */}
       <div
-        className={`relative overflow-hidden transition-all duration-500 border-b border-command-border/30
-          ${isCrazyMode ? 'scan-overlay bg-black/95 font-mono' : 'bg-gradient-to-r from-command-panel/90 to-command-panel backdrop-blur-lg'}
-          ${th.border} ${th.bg} border-l-4 ${th.accent}`}
-        style={isCrazyMode ? { animation: 'holo-flicker 10s infinite ease-in-out' } : {}}
+        className={`relative overflow-hidden transition-all duration-300 border-b border-gray-200/50 dark:border-white/10 ${th.bg} border-l-4 ${th.accent}`}
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => { setIsPaused(false); setIsExpanded(false); }}
       >
-        {/* HUD grid overlay */}
-        {isCrazyMode && <div className="absolute inset-0 cyber-grid pointer-events-none" style={{ animation:'grid-breathe 5s infinite' }} />}
-
-        {/* Laser scanline */}
-        {isCrazyMode && (
-          <div className="absolute left-0 right-0 h-[2px] z-10 pointer-events-none opacity-40"
-            style={{ animation:'scanline-slide 3.5s infinite linear', background:'linear-gradient(90deg,transparent,#3b82f6,transparent)', boxShadow:'0 0 12px #3b82f6' }} />
-        )}
-
-        {/* Corner brackets */}
-        {isCrazyMode && <>
-          <div className="absolute top-0 left-0 w-3 h-3 border-t-2 border-l-2 border-command-muted/40 z-20 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-3 h-3 border-t-2 border-r-2 border-command-muted/40 z-20 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-3 h-3 border-b-2 border-l-2 border-command-muted/40 z-20 pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-3 h-3 border-b-2 border-r-2 border-command-muted/40 z-20 pointer-events-none" />
-        </>}
-
         {/* Auto-cycle progress bar at the very bottom */}
         {activeNotices.length > 1 && !isExpanded && (
-          <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/5 z-30">
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gray-200/30 dark:bg-white/5 z-30">
             <div 
               key={safeCurrentIndex}
-              className={`h-full ${th.progressBar} opacity-70`}
+              className={`h-full ${th.progressBar} opacity-60`}
               style={{
                 animationName: 'progress-run',
                 animationDuration: `${CYCLE_DURATION}ms`,
@@ -448,126 +350,116 @@ export default function NoticesBanner() {
         )}
 
         {/* Content row */}
-        <div className="relative z-20 mx-auto max-w-7xl flex items-center justify-between gap-5 px-6 md:px-8 py-5 sm:py-6">
+        <div className="relative z-20 mx-auto max-w-7xl flex items-center justify-between gap-4 px-4 sm:px-6 py-3">
 
           {/* Left: live dot + type badge + text */}
           <div className="flex-1 flex items-center gap-3 overflow-hidden cursor-pointer min-w-0"
-            onClick={() => { playSynthSound('popup'); setSelectedNotice(cur); }}>
+            onClick={() => setSelectedNotice(cur)}>
 
             {/* Pulsing radar dot */}
-            <span className="relative flex h-3.5 w-3.5 shrink-0">
+            <span className="relative flex h-2 w-2 shrink-0">
               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${th.dot}`} />
-              <span className={`relative inline-flex rounded-full h-3.5 w-3.5 ${th.dot}`} />
+              <span className={`relative inline-flex rounded-full h-2 w-2 ${th.dot}`} />
             </span>
 
             {/* Type badge */}
-            <span className={`hidden sm:flex h-8 items-center rounded-lg px-3 border text-xs font-black uppercase tracking-widest select-none shrink-0 ${th.badge}`}>
+            <span className={`inline-flex items-center rounded-md px-2 py-0.5 border text-[10px] font-bold uppercase tracking-wider select-none shrink-0 ${th.badge}`}>
               {cur.type}
             </span>
 
-            {/* Notice text — single language with flip animation */}
+            {/* Notice text */}
             <div className="flex-1 min-w-0 overflow-hidden" key={`${cur.id}-${lang}`}>
-              <div className="lang-flip-enter flex items-center gap-2.5 text-base sm:text-lg font-semibold tracking-tight">
-                {isCrazyMode && (
-                  <span className="text-command-accent text-xs font-black shrink-0 uppercase">
-                    [{lang.toUpperCase()}]&gt;
-                  </span>
-                )}
-                <span className="text-xs font-black uppercase tracking-widest text-command-muted shrink-0">
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 shrink-0">
                   {cur.source}
                 </span>
-                <span className="text-gray-500 text-lg">|</span>
-                <span className={`font-extrabold truncate ${th.glow}`}><TranslatedText text={cur.title} /></span>
-                <span className="hidden lg:inline text-gray-500">—</span>
-                <span className="hidden lg:inline text-gray-300 truncate max-w-2xl font-normal text-sm"><TranslatedText text={cur.message} /></span>
+                <span className="text-gray-300 dark:text-gray-700">|</span>
+                <span className="font-semibold truncate text-gray-900 dark:text-white"><TranslatedText text={cur.title} /></span>
+                <span className="hidden md:inline text-gray-350 dark:text-gray-650">—</span>
+                <span className="hidden md:inline text-gray-500 dark:text-gray-400 truncate max-w-xl text-xs font-normal"><TranslatedText text={cur.message} /></span>
               </div>
             </div>
 
-            {/* Expand hint (visible on hover when paused) */}
+            {/* Expand hint */}
             {isPaused && !isExpanded && (
               <button
-                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); playSynthSound('popup'); }}
-                className="shrink-0 text-xs font-black text-command-accent uppercase tracking-wider hover:underline cursor-pointer animate-pulse hidden md:inline-block"
+                onClick={(e) => { e.stopPropagation(); setIsExpanded(true); }}
+                className="shrink-0 text-xs font-semibold text-[#5E8599] hover:underline cursor-pointer hidden md:inline-block"
               >
-                {isCrazyMode ? '[ EXPAND ]' : '▼ Expand'}
+                Expand ▼
               </button>
             )}
           </div>
 
           {/* Right: controls */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
 
             {/* Language toggle pill */}
             <button onClick={(e) => { e.stopPropagation(); toggleLang(); }}
-              className="flex items-center h-9 rounded-xl border border-command-border/50 bg-command-bg/40 overflow-hidden cursor-pointer transition-all hover:border-command-accent/40 group px-3 py-1 text-xs font-black text-white"
+              className="flex items-center justify-center h-8 rounded-lg border border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 px-2.5 text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/10 cursor-pointer transition-colors"
               title="Switch Language">
               <span>{lang.toUpperCase()}</span>
             </button>
 
             {/* Voice Read Aloud button */}
             <button onClick={(e) => { e.stopPropagation(); speakNotice(cur.title, cur.message); }}
-              className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                isSpeaking ? 'bg-command-accent/15 border-command-accent/40 text-command-accent shadow-[0_0_8px_rgba(59,130,246,0.25)]' 
-                  : 'border-command-border/40 text-gray-400 hover:text-white hover:bg-white/5'}`}
-              title={isSpeaking ? 'Stop Listening' : 'Listen to News'}>
+              className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                isSpeaking ? 'bg-command-accent/15 border-command-accent/40 text-command-accent' 
+                  : 'border-gray-200 dark:border-white/10 bg-white/50 dark:bg-white/5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`}
+              title={isSpeaking ? 'Stop Reading' : 'Read Aloud'}>
               {isSpeaking ? (
-                <div className="flex items-end gap-[2px] h-5 w-5 justify-center pb-1">
-                  <span className="w-[3px] h-2 bg-command-accent rounded-full origin-bottom animate-[voiceWave_0.8s_infinite_ease-in-out]"></span>
-                  <span className="w-[3px] h-3.5 bg-command-accent rounded-full origin-bottom animate-[voiceWave_0.8s_infinite_ease-in-out_0.2s]"></span>
-                  <span className="w-[3px] h-2.5 bg-command-accent rounded-full origin-bottom animate-[voiceWave_0.8s_infinite_ease-in-out_0.4s]"></span>
-                  <span className="w-[3px] h-4 bg-command-accent rounded-full origin-bottom animate-[voiceWave_0.8s_infinite_ease-in-out_0.1s]"></span>
-                </div>
+                <svg className="h-4.5 w-4.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                </svg>
               ) : (
-                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V9a9 9 0 00-18 0v10a2 2 0 002 2zm8-6v-4m-8 4v-4" />
+                <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
                 </svg>
               )}
             </button>
 
             {/* Nav arrows */}
             {activeNotices.length > 1 && (
-              <div className="hidden md:flex items-center bg-command-bg/40 border border-command-border/40 rounded-xl p-1">
-                <button onClick={goPrev} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 cursor-pointer">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              <div className="hidden md:flex items-center bg-white/50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-lg p-0.5">
+                <button onClick={goPrev} className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded hover:bg-gray-150 dark:hover:bg-white/5 cursor-pointer">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
                 </button>
-                <span className="text-xs font-black text-gray-400 px-2 select-none font-mono">{safeCurrentIndex + 1}/{activeNotices.length}</span>
-                <button onClick={goNext} className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 cursor-pointer">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
+                <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 px-1.5 select-none font-mono">{safeCurrentIndex + 1}/{activeNotices.length}</span>
+                <button onClick={goNext} className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 rounded hover:bg-gray-150 dark:hover:bg-white/5 cursor-pointer">
+                  <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                 </button>
               </div>
             )}
 
             {/* All notices button */}
-            <button onClick={(e) => { e.stopPropagation(); playSynthSound('popup'); setIsListViewOpen(true); }}
-              className="px-3.5 py-1.5 rounded-xl bg-command-accent/10 border border-command-accent/25 text-command-accent hover:bg-command-accent/20 text-xs font-black cursor-pointer uppercase tracking-wider">
+            <button onClick={(e) => { e.stopPropagation(); setIsListViewOpen(true); }}
+              className="px-2.5 py-1.5 rounded-lg bg-command-accent/10 border border-command-accent/20 text-command-accent hover:bg-command-accent/20 text-[10px] font-bold cursor-pointer uppercase tracking-wider">
               ALL ({activeNotices.length})
             </button>
 
             {/* Dismiss */}
             <button onClick={(e) => dismiss(e, cur.id)}
-              className="p-1.5 text-gray-400 hover:text-white hover:bg-white/5 rounded-lg cursor-pointer" title="Dismiss">
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+              className="p-1 text-gray-400 dark:text-gray-500 hover:text-gray-750 dark:hover:text-gray-250 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg cursor-pointer" title="Dismiss">
+              <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
         </div>
 
-        {/* ─── Interactive inline expand (shown on hover click) ─── */}
+        {/* ─── Interactive inline expand ─── */}
         {isExpanded && (
-          <div className="expand-slide relative z-20 mx-auto max-w-7xl px-6 md:px-8 pb-4 pt-1">
-            <div className={`rounded-xl border p-4 text-sm leading-relaxed
-              ${isCrazyMode ? 'bg-black/80 border-command-accent/25 text-green-300 font-mono' : 'bg-command-bg/50 border-command-border/40 text-gray-200'}`}>
-              {isCrazyMode && <div className="text-[9px] text-command-accent mb-1.5 uppercase font-bold tracking-widest select-none">&gt; DECRYPTED_FEED [{lang === 'en' ? 'ENGLISH' : 'HINDI'}] //</div>}
-              <p className="text-xs sm:text-sm"><TranslatedText text={cur.message} /></p>
-              <div className="flex items-center justify-between mt-3 pt-2 border-t border-command-border/30 text-[10px] text-command-muted">
+          <div className="expand-slide relative z-20 mx-auto max-w-7xl px-4 sm:px-6 pb-3 pt-0">
+            <div className="rounded-lg border border-gray-200/60 dark:border-white/10 bg-white/70 dark:bg-gray-900/70 p-3.5 text-xs text-gray-600 dark:text-gray-300 backdrop-blur-sm shadow-sm leading-relaxed">
+              <p><TranslatedText text={cur.message} /></p>
+              <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-gray-100 dark:border-white/5 text-[10px] text-gray-400 dark:text-gray-500">
                 <span>{new Date(cur.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}</span>
-                <div className="flex gap-2">
+                <div className="flex gap-3">
                   {cur.type === 'traffic' && location.pathname !== '/congestion' && (
-                    <button onClick={() => deepLink(cur)} className="text-command-accent font-bold hover:underline cursor-pointer">
-                      {lang === 'en' ? '→ Avoid Congestion' : '→ भीड़ से बचें'}
+                    <button onClick={() => deepLink(cur)} className="text-command-accent font-semibold hover:underline cursor-pointer">
+                      Avoid Congestion →
                     </button>
                   )}
-                  <button onClick={() => { playSynthSound('popup'); setSelectedNotice(cur); setIsExpanded(false); }} className="text-command-accent font-bold hover:underline cursor-pointer">
-                    {lang === 'en' ? 'Full Details →' : 'पूर्ण विवरण →'}
+                  <button onClick={() => { setSelectedNotice(cur); setIsExpanded(false); }} className="text-command-accent font-semibold hover:underline cursor-pointer">
+                    Full Details →
                   </button>
                 </div>
               </div>
@@ -579,96 +471,76 @@ export default function NoticesBanner() {
       {/* ═══════ DETAIL MODAL ═══════ */}
       {selectedNotice && (() => {
         const selTr = translate(selectedNotice);
-        const selT = selTr[lang];
         const selTh = getTheme(selectedNotice);
         return (
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-            <div className={`w-full max-w-xl rounded-2xl border p-6 sm:p-8 shadow-[0_0_60px_rgba(59,130,246,0.15)] relative overflow-hidden
-              ${isCrazyMode ? 'border-command-accent/50 scan-overlay font-mono bg-black' : 'border-command-border bg-command-panel'}`}>
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm transition-all duration-300">
+            <div className="w-full max-w-lg rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-6 shadow-xl relative overflow-hidden flex flex-col">
 
-              {isCrazyMode && <>
-                <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-command-accent" />
-                <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-command-accent" />
-                <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-command-accent" />
-                <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-command-accent" />
-              </>}
-
-              <div className="flex items-start justify-between gap-4 mb-5 relative z-20">
+              <div className="flex items-start justify-between gap-4 mb-4">
                 <div className="flex items-center gap-3">
-                  <span className={`flex h-12 w-12 items-center justify-center rounded-xl border ${selTh.badge}`}>
+                  <span className={`flex h-10 w-10 items-center justify-center rounded-xl border shrink-0 ${selTh.badge}`}>
                     {selectedNotice.type === 'traffic' ? (
-                      <svg className="h-6 w-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                     ) : selectedNotice.type === 'circular' ? (
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
                     ) : (
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     )}
                   </span>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-command-muted">{selectedNotice.source}</span>
-                      <span className={`text-[9px] px-2 py-0.5 rounded border font-bold uppercase ${
-                        selectedNotice.urgency === 'high' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-450">{selectedNotice.source}</span>
+                      <span className={`text-[8px] px-1.5 py-0.5 rounded border font-semibold uppercase ${
+                        selectedNotice.urgency === 'high' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/50' : 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50'}`}>
                         {selectedNotice.urgency}
                       </span>
                       {/* Language toggle inside modal */}
                       <button onClick={toggleLang}
-                        className="flex items-center h-5 rounded border border-command-border/50 bg-command-bg/40 px-2 cursor-pointer hover:border-command-accent/40 text-[8px] font-black text-white">
-                        <span>{lang.toUpperCase()}</span>
+                        className="flex items-center h-5 rounded border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-1.5 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 text-[8px] font-bold text-gray-700 dark:text-gray-300">
+                        {lang.toUpperCase()}
                       </button>
 
                       {/* Voice Read Aloud inside modal */}
                       <button onClick={() => speakNotice(selectedNotice.title, selectedNotice.message)}
-                        className={`flex items-center justify-center h-5 w-5 rounded-full border cursor-pointer hover:border-command-accent/40 ${
-                          isSpeaking ? 'bg-command-accent/15 border-command-accent/30 text-command-accent' : 'border-command-border/50 bg-command-bg/40 text-gray-400 hover:text-white'}`}
-                        title={isSpeaking ? 'Stop Listening' : 'Listen'}>
-                        {isSpeaking ? (
-                          <div className="flex items-end gap-[1.5px] h-3 justify-center pb-[1px]">
-                            <span className="w-[2px] h-2 bg-command-accent rounded-full origin-bottom animate-[voiceWave_0.8s_infinite_ease-in-out]"></span>
-                            <span className="w-[2px] h-3 bg-command-accent rounded-full origin-bottom animate-[voiceWave_0.8s_infinite_ease-in-out_0.2s]"></span>
-                            <span className="w-[2px] h-1.5 bg-command-accent rounded-full origin-bottom animate-[voiceWave_0.8s_infinite_ease-in-out_0.4s]"></span>
-                          </div>
-                        ) : (
-                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 18h.01M8 21h8a2 2 0 002-2V9a9 9 0 00-18 0v10a2 2 0 002 2zm8-6v-4m-8 4v-4" />
-                          </svg>
-                        )}
+                        className={`flex items-center justify-center h-5 w-5 rounded border cursor-pointer ${
+                          isSpeaking ? 'bg-command-accent/15 border-command-accent/30 text-command-accent' : 'border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 text-gray-400 dark:text-gray-505 hover:text-gray-750 dark:hover:text-gray-250'}`}
+                        title={isSpeaking ? 'Stop Reading' : 'Read Aloud'}>
+                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                        </svg>
                       </button>
                     </div>
-                    <h3 className="text-lg font-extrabold text-white mt-1.5 uppercase tracking-tight"><TranslatedText text={selectedNotice.title} /></h3>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white mt-1 leading-snug"><TranslatedText text={selectedNotice.title} /></h3>
                   </div>
                 </div>
-                <button onClick={() => { playSynthSound('click'); stopSpeaking(); setSelectedNotice(null); }}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <button onClick={() => { stopSpeaking(); setSelectedNotice(null); }}
+                  className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg cursor-pointer">
+                  <svg className="h-5.5 w-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
 
-              <div className="space-y-4 relative z-20">
-                <div className={`rounded-xl border p-5 leading-relaxed
-                  ${isCrazyMode ? 'bg-black/90 border-command-accent/25 text-green-300 font-mono shadow-[inset_0_0_10px_rgba(59,130,246,0.08)]' : 'bg-command-bg/40 border-command-border/40 text-gray-200'}`}>
-                  {isCrazyMode && <div className="text-[9px] text-command-accent mb-2 uppercase font-bold tracking-widest select-none">&gt; FEED_DECRYPT [{lang === 'en' ? 'ENGLISH' : 'HINDI'}] //</div>}
+              <div className="space-y-4 flex-1">
+                <div className="rounded-xl border border-gray-150 dark:border-white/5 bg-gray-50/50 dark:bg-white/[0.02] p-4 sm:p-5 leading-relaxed text-sm text-gray-750 dark:text-gray-250">
                   <p className="whitespace-pre-line text-sm" key={`modal-${selectedNotice.id}-${lang}`}>
                     <span className="lang-flip-enter inline-block"><TranslatedText text={selectedNotice.message} /></span>
                   </p>
-                  {isCrazyMode && <div className="text-[9px] text-command-accent mt-3 uppercase font-bold tracking-widest select-none text-right">// END_FEED</div>}
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-command-muted border-t border-command-border/30 pt-3">
+                <div className="flex items-center justify-between text-[11px] text-gray-450 dark:text-gray-500 border-t border-gray-100 dark:border-white/5 pt-3">
                   <span>{new Date(selectedNotice.timestamp).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'medium' })}</span>
-                  <span>{lang === 'en' ? 'Type' : 'प्रकार'}: <strong className="capitalize text-gray-300">{selectedNotice.type}</strong></span>
+                  <span>Category: <strong className="capitalize text-gray-700 dark:text-gray-300">{selectedNotice.type}</strong></span>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 relative z-20">
+              <div className="flex justify-end gap-2.5 mt-5">
                 <button onClick={(e) => { dismiss(e, selectedNotice.id); stopSpeaking(); setSelectedNotice(null); }}
-                  className="px-5 py-2.5 border border-command-border rounded-xl text-xs font-bold text-gray-300 hover:text-white hover:bg-white/5 cursor-pointer">
-                  {lang === 'en' ? 'Dismiss Notice' : 'सूचना खारिज करें'}
+                  className="px-4 py-2 border border-gray-200 dark:border-white/10 rounded-xl text-xs font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer">
+                  Dismiss Notice
                 </button>
                 {selectedNotice.type === 'traffic' && location.pathname !== '/congestion' && (
                   <button onClick={() => { stopSpeaking(); deepLink(selectedNotice); }}
-                    className="px-5 py-2.5 bg-command-accent rounded-xl text-xs font-black text-white hover:bg-command-accent/90 shadow-lg shadow-command-accent/20 hover:scale-[1.02] cursor-pointer transition-transform">
-                    {lang === 'en' ? 'AVOID CONGESTION →' : 'भीड़ से बचें →'}
+                    className="px-4 py-2 bg-[#5E8599] hover:bg-[#5E8599]/90 rounded-xl text-xs font-semibold text-white hover:scale-[1.01] active:scale-100 cursor-pointer transition-all">
+                    Avoid Congestion
                   </button>
                 )}
               </div>
@@ -679,47 +551,37 @@ export default function NoticesBanner() {
 
       {/* ═══════ LIST MODAL ═══════ */}
       {isListViewOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md">
-          <div className={`w-full max-w-3xl rounded-2xl border p-6 sm:p-8 shadow-[0_0_60px_rgba(59,130,246,0.15)] flex flex-col max-h-[85vh] overflow-hidden
-            ${isCrazyMode ? 'border-command-accent/50 scan-overlay font-mono bg-black' : 'border-command-border bg-command-panel'}`}>
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-sm transition-all duration-300">
+          <div className="w-full max-w-2xl rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 sm:p-6 shadow-xl flex flex-col max-h-[80vh] overflow-hidden">
 
-            {isCrazyMode && <>
-              <div className="absolute top-0 left-0 w-5 h-5 border-t-2 border-l-2 border-command-accent" />
-              <div className="absolute top-0 right-0 w-5 h-5 border-t-2 border-r-2 border-command-accent" />
-              <div className="absolute bottom-0 left-0 w-5 h-5 border-b-2 border-l-2 border-command-accent" />
-              <div className="absolute bottom-0 right-0 w-5 h-5 border-b-2 border-r-2 border-command-accent" />
-            </>}
-
-            <div className="flex items-center justify-between mb-5 border-b border-command-border/40 pb-3 shrink-0 relative z-20">
+            <div className="flex items-center justify-between mb-4 border-b border-gray-100 dark:border-white/5 pb-3 shrink-0">
               <div>
-                <h3 className="text-lg font-black text-white uppercase tracking-tight">
-                  {lang === 'en' ? (isCrazyMode ? 'ACTIVE_SYSTEM_ALERTS' : 'All Active Notices') : lang === 'hi' ? (isCrazyMode ? 'सक्रिय_सिस्टम_अलर्ट' : 'सभी सक्रिय सूचनाएँ') : (isCrazyMode ? 'ಸಕ್ರಿಯ_ಸಿಸ್ಟಮ್_ಅಲರ್ಟ್‌ಗಳು' : 'ಎಲ್ಲಾ ಸಕ್ರಿಯ ಪ್ರಕಟಣೆಗಳು')}
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                  {lang === 'en' ? 'Active System Alerts' : lang === 'hi' ? 'सक्रिय सिस्टम अलर्ट' : 'ಸಕ್ರಿಯ ಸಿಸ್ಟಮ್ ಅಲರ್ಟ್‌ಗಳು'}
                 </h3>
-                <p className="text-xs text-command-muted mt-0.5">
+                <p className="text-[11px] text-gray-450 dark:text-gray-500 mt-0.5">
                   {lang === 'en' ? 'Live traffic updates and official government circulars.' : lang === 'hi' ? 'लाइव ट्रैफ़िक अपडेट और आधिकारिक सरकारी सूचनाएँ।' : 'ಲೈವ್ ದಟ್ಟಣೆ ನವೀಕರಣಗಳು ಮತ್ತು ಅಧಿಕೃತ ಸರ್ಕಾರಿ ಪ್ರಕಟಣೆಗಳು.'}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={toggleLang}
-                  className="flex items-center h-6 rounded border border-command-border/50 bg-command-bg/40 px-2 cursor-pointer hover:border-command-accent/40 text-[9px] font-black text-white">
+                  className="flex items-center h-6 rounded border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-white/5 px-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/10 text-[10px] font-bold text-gray-700 dark:text-gray-300">
                   <span>{lang.toUpperCase()}</span>
                 </button>
-                <button onClick={() => { playSynthSound('click'); setIsListViewOpen(false); }}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-xl cursor-pointer">
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                <button onClick={() => setIsListViewOpen(false)}
+                  className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg cursor-pointer">
+                  <svg className="h-5.5 w-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
               </div>
             </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1 py-1 relative z-20">
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1.5 py-1">
               {activeNotices.map((n) => {
                 const nTh = getTheme(n);
-                const nTr = translate(n);
-                const nT = nTr[lang];
                 return (
-                  <div key={n.id} className={`flex flex-col sm:flex-row sm:items-start justify-between gap-4 p-4 sm:p-5 rounded-xl border transition-all ${nTh.border} ${nTh.bg} border-l-4 ${nTh.accent}`}>
+                  <div key={n.id} className={`flex flex-col sm:flex-row sm:items-start justify-between gap-3 p-4 rounded-xl border ${nTh.bg} border-l-4 ${nTh.accent} transition-all`}>
                     <div className="flex items-start gap-3">
-                      <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border mt-0.5 ${nTh.badge}`}>
+                      <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border mt-0.5 ${nTh.badge}`}>
                         {n.type === 'traffic' ? (
                           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
                         ) : (
@@ -728,21 +590,21 @@ export default function NoticesBanner() {
                       </span>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-[10px] font-black uppercase tracking-wider text-command-muted">{n.source}</span>
-                          <span className={`text-[8px] px-1.5 rounded border font-bold uppercase ${n.urgency === 'high' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-amber-500/10 text-amber-400 border-amber-500/20'}`}>{n.urgency}</span>
-                          <span className="text-[10px] text-command-muted">• {new Date(n.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-550 dark:text-gray-400">{n.source}</span>
+                          <span className={`text-[8px] px-1.5 rounded border font-semibold uppercase ${n.urgency === 'high' ? 'bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900/50' : 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-900/50'}`}>{n.urgency}</span>
+                          <span className="text-[9px] text-gray-450 dark:text-gray-500">• {new Date(n.timestamp).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
-                        <h4 className="text-sm font-extrabold text-white mt-1"><TranslatedText text={n.title} /></h4>
-                        <p className={`text-xs sm:text-sm mt-1 leading-relaxed ${isCrazyMode ? 'text-green-300/90' : 'text-gray-300'}`}><TranslatedText text={n.message} /></p>
+                        <h4 className="text-xs sm:text-sm font-semibold text-gray-900 dark:text-white mt-1"><TranslatedText text={n.title} /></h4>
+                        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 leading-relaxed"><TranslatedText text={n.message} /></p>
                       </div>
                     </div>
-                    <div className="flex sm:flex-col justify-end gap-2 shrink-0 border-t sm:border-t-0 border-command-border/30 pt-2 sm:pt-0">
+                    <div className="flex sm:flex-col justify-end gap-2 shrink-0 border-t sm:border-t-0 border-gray-150 dark:border-white/5 pt-2 sm:pt-0">
                       {n.type === 'traffic' && location.pathname !== '/congestion' && (
-                        <button onClick={() => deepLink(n)} className="px-3 py-1.5 bg-command-accent/20 hover:bg-command-accent text-command-accent hover:text-white rounded-lg text-[10px] font-black cursor-pointer text-center transition-all">
+                        <button onClick={() => deepLink(n)} className="px-3 py-1.5 bg-[#5E8599]/15 hover:bg-[#5E8599] text-[#5E8599] hover:text-white rounded-lg text-[10px] font-semibold cursor-pointer text-center transition-all">
                           {lang === 'en' ? 'View Map' : 'नक्शा'}
                         </button>
                       )}
-                      <button onClick={(e) => dismiss(e, n.id)} className="px-3 py-1.5 border border-command-border rounded-lg text-[10px] font-bold text-gray-400 hover:text-white hover:bg-white/5 cursor-pointer text-center">
+                      <button onClick={(e) => dismiss(e, n.id)} className="px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg text-[10px] font-semibold text-gray-550 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 cursor-pointer text-center">
                         {lang === 'en' ? 'Dismiss' : 'खारिज'}
                       </button>
                     </div>
@@ -751,9 +613,9 @@ export default function NoticesBanner() {
               })}
             </div>
 
-            <div className="flex justify-between items-center mt-4 border-t border-command-border/40 pt-3 shrink-0 text-xs text-command-muted relative z-20">
-              <span>{lang === 'en' ? 'Active notices' : 'सक्रिय सूचनाएँ'}: {activeNotices.length}</span>
-              <button onClick={() => { playSynthSound('success'); localStorage.removeItem('margsense_dismissed_notices'); setDismissedIds([]); }}
+            <div className="flex justify-between items-center mt-3 border-t border-gray-100 dark:border-white/5 pt-3 shrink-0 text-xs text-gray-500 dark:text-gray-400">
+              <span>{lang === 'en' ? 'Active alerts' : 'सक्रिय अलर्ट'}: {activeNotices.length}</span>
+              <button onClick={() => { localStorage.removeItem('margsense_dismissed_notices'); setDismissedIds([]); }}
                 className="text-command-accent hover:underline cursor-pointer font-bold">
                 {lang === 'en' ? 'Reset All Dismissed' : 'सभी खारिज रीसेट करें'}
               </button>

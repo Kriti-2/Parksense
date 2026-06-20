@@ -250,7 +250,7 @@ export default function ShiftPlannerPage() {
   // Circular gauge config
   const radius = 50;
   const strokeWidth = 8;
-  const normalizedRadius = radius - strokeWidth * 2;
+  const normalizedRadius = radius - strokeWidth / 2; // = 46 (keeps circle centered and maximizes space inside)
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (complianceScore / 100) * circumference;
 
@@ -341,29 +341,31 @@ export default function ShiftPlannerPage() {
             </div>
             
             {/* SVG Circular Ring Gauge */}
-            <div className="relative flex items-center justify-center">
-              <svg className="h-32 w-32 transform -rotate-90" viewBox="0 0 128 128">
-                <circle
-                  className="text-command-border stroke-current"
-                  strokeWidth={strokeWidth}
-                  fill="transparent"
-                  r={normalizedRadius}
-                  cx="64"
-                  cy="64"
-                />
-                <circle
-                  className={`${gaugeColor} stroke-current transition-all duration-500`}
-                  strokeWidth={strokeWidth}
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                  fill="transparent"
-                  r={normalizedRadius}
-                  cx="64"
-                  cy="64"
-                />
+            <div className="relative mx-auto flex items-center justify-center" style={{ width: '128px', height: '128px' }}>
+              <svg className="block" width="128" height="128" viewBox="0 0 128 128" style={{ width: '128px', height: '128px', minWidth: '128px', minHeight: '128px' }}>
+                <g transform="rotate(-90 64 64)">
+                  <circle
+                    className="text-command-border stroke-current"
+                    strokeWidth={strokeWidth}
+                    fill="transparent"
+                    r={normalizedRadius}
+                    cx="64"
+                    cy="64"
+                  />
+                  <circle
+                    className={`${gaugeColor} stroke-current transition-all duration-500`}
+                    strokeWidth={strokeWidth}
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
+                    strokeLinecap="round"
+                    fill="transparent"
+                    r={normalizedRadius}
+                    cx="64"
+                    cy="64"
+                  />
+                </g>
               </svg>
-              <div className="absolute text-center">
+              <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center text-center" style={{ width: '128px', height: '128px' }}>
                 <span className="text-3xl font-extrabold text-gray-900 dark:text-white">{complianceScore}%</span>
                 <span className="block text-[8px] text-gray-500 uppercase tracking-wider font-bold">Coverage</span>
               </div>

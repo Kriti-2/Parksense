@@ -28,35 +28,37 @@ function FitRouteBounds({ route }) {
 function ComplianceRing({ score }) {
   const radius = 30;
   const strokeWidth = 5;
-  const normalizedRadius = radius - strokeWidth * 2;
+  const normalizedRadius = radius - strokeWidth / 2; // = 27.5 (keeps circle centered and maximizes space inside)
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="relative flex items-center justify-center h-16 w-16 shrink-0">
-      <svg className="h-16 w-16 transform -rotate-90" viewBox="0 0 64 64">
-        <circle
-          className="text-command-border stroke-current"
-          strokeWidth={strokeWidth}
-          fill="transparent"
-          r={normalizedRadius}
-          cx="32"
-          cy="32"
-        />
-        <circle
-          className="text-command-success stroke-current transition-all duration-500"
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          fill="transparent"
-          r={normalizedRadius}
-          cx="32"
-          cy="32"
-        />
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: '64px', height: '64px' }}>
+      <svg className="block" width="64" height="64" viewBox="0 0 64 64" style={{ width: '64px', height: '64px', minWidth: '64px', minHeight: '64px' }}>
+        <g transform="rotate(-90 32 32)">
+          <circle
+            className="text-command-border stroke-current"
+            strokeWidth={strokeWidth}
+            fill="transparent"
+            r={normalizedRadius}
+            cx="32"
+            cy="32"
+          />
+          <circle
+            className="text-command-success stroke-current transition-all duration-500"
+            strokeWidth={strokeWidth}
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            fill="transparent"
+            r={normalizedRadius}
+            cx="32"
+            cy="32"
+          />
+        </g>
       </svg>
-      <div className="absolute text-center">
-        <span className="text-xs font-extrabold text-gray-800">{score}%</span>
+      <div className="absolute top-0 left-0 w-full h-full flex flex-col items-center justify-center text-center" style={{ width: '64px', height: '64px' }}>
+        <span className="text-xs font-extrabold text-gray-800 dark:text-white">{score}%</span>
       </div>
     </div>
   );

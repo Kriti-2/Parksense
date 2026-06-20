@@ -1,75 +1,61 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import { LanguageProvider } from './context/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
-import Homepage from './pages/Homepage';
-import About from './pages/About';
-import Predict from './pages/Predict';
-import Analytics from './pages/Analytics';
-import Corridors from './pages/Corridors';
-import LiveViolationReporter from './pages/LiveViolationReporter';
-import ShiftPlanner from './pages/ShiftPlanner';
-import CameraMonitor from './pages/CameraMonitor';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import UserCongestion from './pages/UserCongestion';
 import UserLayout from './layouts/UserLayout';
 
+// ── Lazy-load all pages so they're only fetched when visited ─────────────────
+const Homepage = lazy(() => import('./pages/Homepage'));
+const About = lazy(() => import('./pages/About'));
+const Predict = lazy(() => import('./pages/Predict'));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const Corridors = lazy(() => import('./pages/Corridors'));
+const LiveViolationReporter = lazy(() => import('./pages/LiveViolationReporter'));
+const ShiftPlanner = lazy(() => import('./pages/ShiftPlanner'));
+const CameraMonitor = lazy(() => import('./pages/CameraMonitor'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const UserCongestion = lazy(() => import('./pages/UserCongestion'));
+
+// Minimal loading fallback — avoids layout shift
+function PageLoader() {
+  return (
+    <div className="flex h-[60vh] items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#BA5A5A] border-t-transparent" />
+    </div>
+  );
+}
 
 function CorridorsRoute() {
   const { user } = useAuth();
   if (user?.role === 'officer') {
-    return (
-      <DashboardLayout>
-        <Corridors />
-      </DashboardLayout>
-    );
+    return <DashboardLayout><Corridors /></DashboardLayout>;
   }
-  return (
-    <UserLayout>
-      <Corridors />
-    </UserLayout>
-  );
+  return <UserLayout><Corridors /></UserLayout>;
 }
 
 function HomepageRoute() {
   const { user } = useAuth();
   if (user?.role === 'officer') {
-    return (
-      <DashboardLayout>
-        <Homepage />
-      </DashboardLayout>
-    );
+    return <DashboardLayout><Homepage /></DashboardLayout>;
   }
-  return (
-    <UserLayout>
-      <Homepage />
-    </UserLayout>
-  );
+  return <UserLayout><Homepage /></UserLayout>;
 }
 
 function AboutRoute() {
   const { user } = useAuth();
   if (user?.role === 'officer') {
-    return (
-      <DashboardLayout>
-        <About />
-      </DashboardLayout>
-    );
+    return <DashboardLayout><About /></DashboardLayout>;
   }
-  return (
-    <UserLayout>
-      <About />
-    </UserLayout>
-  );
+  return <UserLayout><About /></UserLayout>;
 }
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AuthProvider>
-        <BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -98,8 +84,8 @@ export default function App() {
 
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
-        </BrowserRouter>
-      </AuthProvider>
-    </LanguageProvider>
+        </Suspense>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }

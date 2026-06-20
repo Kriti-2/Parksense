@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ChatBot from '../components/ChatBot';
 import { useTranslation, LanguageSelector } from '../context/LanguageContext';
@@ -26,7 +26,7 @@ export default function DashboardLayout({ children }) {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F6F8] dark:bg-gray-950 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[#EFEFEA] dark:bg-gray-950 transition-colors duration-300">
 
       {/* ── Navbar ── */}
       <header className="sticky top-0 z-50 bg-white/98 dark:bg-gray-950/98 border-b border-gray-100 dark:border-white/10 backdrop-blur-sm">
@@ -73,10 +73,13 @@ export default function DashboardLayout({ children }) {
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
             {/* Live Feed */}
-            <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-[#BA5A5A] transition-colors cursor-pointer"
+            >
               <span className="h-2 w-2 rounded-full bg-[#BA5A5A] animate-pulse" />
               {t('liveFeed')}
-            </span>
+            </Link>
 
             <div className="h-4 w-px bg-gray-200 dark:bg-white/10" />
             <LanguageSelector />
@@ -181,5 +184,3 @@ export default function DashboardLayout({ children }) {
     </div>
   );
 }
-
-

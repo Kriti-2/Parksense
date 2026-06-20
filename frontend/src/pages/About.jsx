@@ -78,7 +78,7 @@ const DatabaseIcon = ({ className = "h-4 w-4 text-[#489C6F]" }) => (
 
 export default function About() {
   return (
-    <div className="flex flex-col justify-between h-[calc(100vh-115px)] gap-4 lg:gap-6 text-left px-4 md:px-8 py-1.5 bg-[#F5F6F8]">
+    <div className="flex flex-col justify-between h-[calc(100vh-115px)] gap-4 lg:gap-6 text-left px-4 md:px-8 py-1.5 bg-[#EFEFEA]">
       
       {/* ── Header Section ── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">

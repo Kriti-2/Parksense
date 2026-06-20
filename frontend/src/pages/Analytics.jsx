@@ -7,11 +7,15 @@ import { useLiveFeed } from '../hooks/useLiveFeed';
 import CongestionDebt from '../components/CongestionDebt';
 import TimeLapse from '../components/TimeLapse';
 import LiveStatusBar from '../components/LiveStatusBar';
+import { useAuth } from '../context/AuthContext';
+import ROICard from '../components/ROICard';
 
 const PIE_COLORS = ['#3b82f6', '#ef4444', '#f59e0b', '#10b981', '#8b5cf6', '#ec4899'];
 
 export default function Analytics() {
+  const { isOfficer } = useAuth();
   const [analytics, setAnalytics] = useState(null);
+  const [shiftData, setShiftData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [lastTick, setLastTick] = useState(null);
 
@@ -26,11 +30,22 @@ export default function Analytics() {
   const { connected, status } = useLiveFeed(handleLiveTick);
 
   useEffect(() => {
-    api.getAnalytics().then((res) => {
-      setAnalytics(res.data);
-      setLoading(false);
-    });
-  }, []);
+    async function load() {
+      try {
+        const [anRes, shRes] = await Promise.all([
+          api.getAnalytics(),
+          isOfficer ? api.getShiftPlanner() : Promise.resolve({ data: null })
+        ]);
+        setAnalytics(anRes.data);
+        setShiftData(shRes.data);
+        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load analytics data:", err);
+        setLoading(false);
+      }
+    }
+    load();
+  }, [isOfficer]);
 
   if (loading) {
     return <div className="text-center text-gray-400">Loading live analytics...</div>;
@@ -76,8 +91,9 @@ export default function Analytics() {
       )}
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <div className="xl:col-span-2">
+        <div className="xl:col-span-2 space-y-6">
           <CongestionDebt analytics={analytics} />
+          {isOfficer && <ROICard shiftData={shiftData} analytics={analytics} />}
         </div>
         <TimeLapse trends={analytics?.violation_trends} />
       </div>

@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import { useState, useCallback } from 'react';
@@ -33,7 +33,7 @@ export default function UserLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F5F6F8] dark:bg-gray-950 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-[#EFEFEA] dark:bg-gray-950 transition-colors duration-300">
       <NoticesBanner />
 
       {/* ── Navbar ── */}
@@ -80,10 +80,13 @@ export default function UserLayout({ children }) {
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-            <span className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-[#BA5A5A] transition-colors cursor-pointer"
+            >
               <span className={`h-2 w-2 rounded-full ${connected ? 'bg-[#BA5A5A] animate-pulse' : 'bg-gray-300'}`} />
               {t('liveFeed')}
-            </span>
+            </Link>
             <div className="h-4 w-px bg-gray-200 dark:bg-white/10" />
             <LanguageSelector />
             <div className="h-4 w-px bg-gray-200 dark:bg-white/10" />
@@ -187,5 +190,3 @@ export default function UserLayout({ children }) {
     </div>
   );
 }
-
-

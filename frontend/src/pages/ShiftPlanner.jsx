@@ -3,6 +3,9 @@ import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import KPICard from '../components/KPICard';
 import LiveStatusBar from '../components/LiveStatusBar';
+import EnforcementBrief from '../components/EnforcementBrief';
+import SeverityQueue from '../components/SeverityQueue';
+import RecidivismMap from '../components/RecidivismMap';
 
 function formatINR(amount) {
   if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
@@ -27,6 +30,12 @@ export default function ShiftPlannerPage() {
   const [error, setError] = useState(null);
   const [lastTick, setLastTick] = useState(null);
 
+  // Consolidated Dashboard States
+  const [predictions, setPredictions] = useState(null);
+  const [corridors, setCorridors] = useState(null);
+  const [severity, setSeverity] = useState(null);
+  const [recidivism, setRecidivism] = useState(null);
+
   // Shift & deployment planning states
   const [selectedShift, setSelectedShift] = useState('Morning'); // Default to Morning shift
   const [selectedPriority, setSelectedPriority] = useState('All');
@@ -40,12 +49,23 @@ export default function ShiftPlannerPage() {
       : ["14:00 - 16:00", "16:00 - 18:00", "18:00 - 20:00", "20:00 - 22:00"];
   }, [selectedShift]);
 
-  // Fetch shift planner data
+  // Fetch shift planner data and other consolidated operational stats
   const loadShiftData = useCallback(async () => {
     try {
-      const response = await api.getShiftPlanner();
-      const resData = response.data;
+      const [shRes, prRes, coRes, seRes, reRes] = await Promise.all([
+        api.getShiftPlanner(),
+        api.getPredictions(),
+        api.getCorridors(),
+        api.getSeverityQueue(20),
+        api.getRecidivism()
+      ]);
+
+      const resData = shRes.data;
       setData(resData);
+      setPredictions(prRes.data);
+      setCorridors(coRes.data);
+      setSeverity(seRes.data);
+      setRecidivism(reRes.data);
       
       // Initialize allocations state matching initial recommendations
       const initial = {};
@@ -78,6 +98,15 @@ export default function ShiftPlannerPage() {
   const handleLiveTick = useCallback((payload) => {
     if (payload.type === 'live_tick') {
       setLastTick(payload);
+      if (payload.corridors) setCorridors(payload.corridors);
+      if (payload.severity_queue) {
+        setSeverity((prev) => ({
+          ...(prev || {}),
+          queue: payload.severity_queue,
+          summary: payload.severity_summary,
+          generated_at: payload.timestamp,
+        }));
+      }
     }
   }, []);
 
@@ -298,7 +327,7 @@ export default function ShiftPlannerPage() {
         </div>
       )}
 
-      {/* Main Allocation Area */}
+      {/* Main Allocation Area — right after KPI cards */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         
         {/* Left Side: Score Widget & Staff Deployed Pool (1 Col) */}
@@ -502,6 +531,14 @@ export default function ShiftPlannerPage() {
           </div>
         </div>
       </div>
+
+      {/* Operational Briefs Section — below dispatch canvas */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <EnforcementBrief shiftData={data} predictions={predictions} corridors={corridors} />
+        <SeverityQueue data={severity} />
+      </div>
+
+      <RecidivismMap data={recidivism} />
 
       {/* Deployment Protocol Brief */}
       <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-command-panel p-6">

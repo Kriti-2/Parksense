@@ -74,14 +74,6 @@ export default function NoticesBanner() {
     }
   }, []);
 
-  // Diagnostic log for voices
-  useEffect(() => {
-    if (voices.length > 0) {
-      console.log("ParkSense TTS available voices:", voices.map(v => `${v.name} (${v.lang})`));
-      const hiVoices = voices.filter(v => v.lang.toLowerCase().includes('hi') || v.name.toLowerCase().includes('hindi'));
-      console.log("Hindi voices loaded:", hiVoices.map(v => `${v.name} (${v.lang})`));
-    }
-  }, [voices]);
 
   const stopSpeaking = useCallback(() => {
     if (synthRef.current) {
@@ -412,39 +404,6 @@ export default function NoticesBanner() {
 
   return (
     <>
-      <style>{`
-        @keyframes scanline-slide { 0%{transform:translateY(-100%)} 100%{transform:translateY(100%)} }
-        @keyframes holo-flicker { 0%,100%{opacity:.97} 50%{opacity:.88; filter:hue-rotate(3deg)} }
-        @keyframes grid-breathe { 0%,100%{opacity:.05} 50%{opacity:.14} }
-        @keyframes voiceWave {
-          0%, 100% { transform: scaleY(0.3); }
-          50% { transform: scaleY(1.1); }
-        }
-        .cyber-grid {
-          background-size:20px 20px;
-          background-image:linear-gradient(to right,rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.05) 1px,transparent 1px);
-        }
-        .scan-overlay::after {
-          content:"";position:absolute;inset:0;pointer-events:none;z-index:10;
-          background:linear-gradient(rgba(18,16,16,0) 50%,rgba(0,0,0,.2) 50%),linear-gradient(90deg,rgba(255,0,0,.04),rgba(0,255,0,.015),rgba(0,0,255,.04));
-          background-size:100% 4px,8px 100%;
-        }
-        .lang-flip-enter { animation: langFlip .3s ease-out; }
-        @keyframes langFlip {
-          0% { opacity:0; transform:translateY(8px); }
-          100% { opacity:1; transform:translateY(0); }
-        }
-        .expand-slide { animation: expandSlide .25s ease-out; }
-        @keyframes expandSlide {
-          0% { opacity:0; max-height:0; }
-          100% { opacity:1; max-height:200px; }
-        }
-        @keyframes progress-run {
-          from { width: 0%; }
-          to { width: 100%; }
-        }
-      `}</style>
-
       {/* ═══════ MAIN BANNER ═══════ */}
       <div
         className={`relative overflow-hidden transition-all duration-500 border-b border-command-border/30

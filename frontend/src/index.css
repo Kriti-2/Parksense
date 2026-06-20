@@ -13,7 +13,7 @@
 }
 
 :root {
-  --command-bg: #F4F6F5;
+  --command-bg: #EFEFEA;
   --command-panel: #FFFFFF;
   --command-border: #E5EEE4;
   --command-accent: #486E5D;
@@ -146,6 +146,29 @@ body {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* ── NoticesBanner static keyframes (moved out of inline JSX style) ── */
+@keyframes scanline-slide { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+@keyframes holo-flicker { 0%, 100% { opacity: .97; } 50% { opacity: .88; filter: hue-rotate(3deg); } }
+@keyframes grid-breathe { 0%, 100% { opacity: .05; } 50% { opacity: .14; } }
+@keyframes voiceWave { 0%, 100% { transform: scaleY(0.3); } 50% { transform: scaleY(1.1); } }
+@keyframes langFlip { 0% { opacity: 0; transform: translateY(8px); } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes expandSlide { 0% { opacity: 0; max-height: 0; } 100% { opacity: 1; max-height: 200px; } }
+@keyframes progress-run { from { width: 0%; } to { width: 100%; } }
+
+.cyber-grid {
+  background-size: 20px 20px;
+  background-image: linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
+}
+.scan-overlay::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 10;
+  background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,.2) 50%),
+              linear-gradient(90deg, rgba(255,0,0,.04), rgba(0,255,0,.015), rgba(0,0,255,.04));
+  background-size: 100% 4px, 8px 100%;
+}
+.lang-flip-enter { animation: langFlip .3s ease-out; }
+.expand-slide { animation: expandSlide .25s ease-out; }
 
 /* Float animation for minimal, aesthetic background orbs */
 @keyframes float {

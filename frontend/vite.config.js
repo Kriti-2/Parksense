@@ -16,4 +16,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split heavy libraries into separate cached chunks
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'map-vendor': ['leaflet', 'react-leaflet'],
+          'chart-vendor': ['recharts'],
+        },
+      },
+    },
+    // Increase chunk size warning threshold (maps are legitimately large)
+    chunkSizeWarningLimit: 800,
+  },
 })

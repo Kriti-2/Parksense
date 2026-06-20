@@ -5,12 +5,6 @@ import { useLiveFeed } from '../hooks/useLiveFeed';
 import { useAuth } from '../context/AuthContext';
 import KPICard from '../components/KPICard';
 import HeatMap from '../components/HeatMap';
-import CongestionDebt from '../components/CongestionDebt';
-import ROICard from '../components/ROICard';
-import EnforcementBrief from '../components/EnforcementBrief';
-import SeverityQueue from '../components/SeverityQueue';
-import RecidivismMap from '../components/RecidivismMap';
-import TimeLapse from '../components/TimeLapse';
 import WeatherBanner from '../components/WeatherBanner';
 import { useTranslation } from '../context/LanguageContext';
 
@@ -106,7 +100,10 @@ function HeroSection({ analytics, lastTick, connected }) {
           {/* CTA Buttons */}
           <div className="flex items-center gap-2.5 flex-wrap">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => {
+                const el = document.getElementById('overview');
+                if (el) el.scrollIntoView({ behavior: 'smooth' });
+              }}
               className="flex items-center gap-2 bg-[#BA5A5A] hover:bg-[#A04848] text-white text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg shadow-lg transition-colors cursor-pointer"
             >
               <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
@@ -220,14 +217,9 @@ export default function Homepage() {
   const [heatmap, setHeatmap] = useState(null);
   const [analytics, setAnalytics] = useState(null);
   const [predictions, setPredictions] = useState(null);
-  const [severity, setSeverity] = useState(null);
-  const [recidivism, setRecidivism] = useState(null);
-  const [shiftData, setShiftData] = useState(null);
-  const [corridors, setCorridors] = useState(null);
   const [lastTick, setLastTick] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
 
   const [violationsLastHourHistory, setViolationsLastHourHistory] = useState([12, 16, 14, 19, 15, 23, 18, 20]);
   const [activeHotspotsHistory, setActiveHotspotsHistory] = useState([2, 1, 3, 2, 4, 3, 2, 3]);
@@ -249,15 +241,6 @@ export default function Homepage() {
           : 40;
       setAvgCongestionHistory((prev) => [...prev.slice(-9), Math.round(avgScore)]);
     }
-    if (payload.corridors) setCorridors(payload.corridors);
-    if (payload.severity_queue) {
-      setSeverity((prev) => ({
-        ...(prev || {}),
-        queue: payload.severity_queue,
-        summary: payload.severity_summary,
-        generated_at: payload.timestamp,
-      }));
-    }
     if (payload.kpis) {
       setAnalytics((prev) =>
         prev
@@ -278,38 +261,28 @@ export default function Homepage() {
     }
   }, []);
 
-  const { connected, status } = useLiveFeed(handleLiveTick);
+  const { connected } = useLiveFeed(handleLiveTick);
 
   useEffect(() => {
     async function load() {
       try {
-        // Phase 1 — fast critical data, show UI immediately
-        const [an, pr] = await Promise.all([api.getAnalytics(), api.getPredictions()]);
+        // Fetch all data needed for Live Overview
+        const [an, pr, hm] = await Promise.all([
+          api.getAnalytics(),
+          api.getPredictions(),
+          api.getHeatmap(1500)
+        ]);
         setAnalytics(an.data);
         setPredictions(pr.data);
-        setLoading(false);
-
-        // Phase 2 — heavy data in background (fetch officer endpoints conditionally)
-        const promises = [
-          api.getHeatmap(5000),
-          isOfficer ? api.getSeverityQueue(20) : Promise.resolve({ data: null }),
-          api.getRecidivism(),
-          isOfficer ? api.getShiftPlanner() : Promise.resolve({ data: null }),
-          api.getCorridors(),
-        ];
-        const [hm, se, re, sh, co] = await Promise.all(promises);
         setHeatmap(hm.data);
-        setSeverity(se.data);
-        setRecidivism(re.data);
-        setShiftData(sh.data);
-        setCorridors(co.data);
+        setLoading(false);
       } catch (err) {
         setError(err.message || 'Failed to load data');
         setLoading(false);
       }
     }
     load();
-  }, [isOfficer]);
+  }, []);
 
   if (loading) {
     return (
@@ -361,83 +334,40 @@ export default function Homepage() {
 
         <WeatherBanner weatherData={predictions?.weather_escalation} liveWeather={lastTick?.weather} />
 
-        {/* Tabs */}
-        <div className="flex overflow-x-auto select-none no-scrollbar flex-nowrap bg-white border border-gray-100 p-1.5 rounded-xl w-full sm:w-fit gap-1.5 shadow-sm">
-          {[
-            { id: 'overview', label: t('liveOverviewTab') },
-            { id: 'economic', label: t('economicImpactTab') },
-            isOfficer && { id: 'operations', label: t('patrolOperationsTab') },
-          ].filter(Boolean).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-6 py-2.5 text-sm font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-[#BA5A5A] text-white shadow-md font-bold'
-                  : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
+        <div className="space-y-6 animate-fadeIn">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <KPICard
+              title={t('totalViolations')}
+              value={kpis.total_violations?.toLocaleString('en-IN') || '—'}
+              subtitle="Bengaluru police dataset"
+              sparklineData={analytics?.violation_trends?.map((t) => t.violations) || []}
+              variant="accent"
+            />
+            <KPICard
+              title={t('activeHotspots')}
+              value={kpis.active_hotspots || 0}
+              subtitle="Live congestion ≥ 50"
+              sparklineData={activeHotspotsHistory}
+              variant="warning"
+            />
+            <KPICard
+              title={t('violations1h')}
+              value={lastTick?.kpis?.violations_last_hour ?? '—'}
+              subtitle="Rolling live window"
+              sparklineData={violationsLastHourHistory}
+              variant="danger"
+            />
+            <KPICard
+              title={t('avgCongestionScore')}
+              value={kpis.avg_congestion_score || 0}
+              subtitle="Traffic + violation signal"
+              sparklineData={avgCongestionHistory}
+              variant="default"
+            />
+          </div>
+          <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
         </div>
-
-        {activeTab === 'overview' && (
-          <div className="space-y-6 animate-fadeIn">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <KPICard
-                title={t('totalViolations')}
-                value={kpis.total_violations?.toLocaleString('en-IN') || '—'}
-                subtitle="Bengaluru police dataset"
-                sparklineData={analytics?.violation_trends?.map((t) => t.violations) || []}
-                variant="accent"
-              />
-              <KPICard
-                title={t('activeHotspots')}
-                value={kpis.active_hotspots || 0}
-                subtitle="Live congestion ≥ 50"
-                sparklineData={activeHotspotsHistory}
-                variant="warning"
-              />
-              <KPICard
-                title={t('violations1h')}
-                value={lastTick?.kpis?.violations_last_hour ?? '—'}
-                subtitle="Rolling live window"
-                sparklineData={violationsLastHourHistory}
-                variant="danger"
-              />
-              <KPICard
-                title={t('avgCongestionScore')}
-                value={kpis.avg_congestion_score || 0}
-                subtitle="Traffic + violation signal"
-                sparklineData={avgCongestionHistory}
-                variant="default"
-              />
-            </div>
-            <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
-          </div>
-        )}
-
-        {activeTab === 'economic' && (
-          <div className={`grid grid-cols-1 gap-6 ${isOfficer ? 'lg:grid-cols-2' : ''} animate-fadeIn`}>
-            <CongestionDebt analytics={analytics} />
-            {isOfficer && <ROICard shiftData={shiftData} analytics={analytics} />}
-          </div>
-        )}
-
-        {activeTab === 'operations' && (
-          <div className="space-y-6 animate-fadeIn">
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
-              <EnforcementBrief shiftData={shiftData} predictions={predictions} corridors={corridors} />
-              <SeverityQueue data={severity} />
-              <TimeLapse trends={analytics?.violation_trends} />
-            </div>
-            <RecidivismMap data={recidivism} />
-          </div>
-        )}
       </div>
     </div>
   );
 }
-
-

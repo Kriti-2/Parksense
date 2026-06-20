@@ -19,11 +19,18 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        // Split heavy libraries into separate cached chunks
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'map-vendor': ['leaflet', 'react-leaflet'],
-          'chart-vendor': ['recharts'],
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'react-vendor';
+            }
+            if (id.includes('leaflet') || id.includes('react-leaflet')) {
+              return 'map-vendor';
+            }
+            if (id.includes('recharts')) {
+              return 'chart-vendor';
+            }
+          }
         },
       },
     },

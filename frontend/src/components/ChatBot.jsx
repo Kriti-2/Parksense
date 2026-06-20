@@ -6,11 +6,11 @@ export default function ChatBot({ context = 'dashboard' }) {
   const [messages, setMessages] = useState(() => {
     if (context === 'login') {
       return [
-        { role: 'assistant', content: 'Hello! I am the ParkSense AI Public Assistant. How can I help you learn about ParkSense or access your account today?' }
+        { role: 'assistant', content: 'Hello! I am the मार्ग Sense Public Assistant. How can I help you learn about मार्ग Sense or access your account today?' }
       ];
     }
     return [
-      { role: 'assistant', content: 'Hello! I am the ParkSense AI Command Center Assistant. How can I help you today?' }
+      { role: 'assistant', content: 'Hello! I am the मार्ग Sense Command Center Assistant. How can I help you today?' }
     ];
   });
   const [input, setInput] = useState('');
@@ -101,7 +101,7 @@ export default function ChatBot({ context = 'dashboard' }) {
         aria-label="Toggle AI Assistant"
       >
         {isOpen ? (
-          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#BA5A5A] to-[#E28F8F] text-white shadow-[0_4px_20px_rgba(186,90,90,0.4)] flex items-center justify-center transition-all duration-300 hover:scale-110">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-[#5E8599] to-[#8FAEB9] text-white shadow-[0_4px_20px_rgba(94,133,153,0.4)] flex items-center justify-center transition-all duration-300 hover:scale-110">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 relative z-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -109,7 +109,7 @@ export default function ChatBot({ context = 'dashboard' }) {
         ) : (
           <div className="relative w-[78px] h-[78px] flex items-center justify-center transition-all duration-300">
             {/* Pulsing glow ring for popping effect */}
-            <span className="absolute inset-2 rounded-full bg-[#BA5A5A] opacity-20 group-hover:opacity-40 animate-ping pointer-events-none"></span>
+            <span className="absolute inset-2 rounded-full bg-[#5E8599] opacity-20 group-hover:opacity-40 animate-ping pointer-events-none"></span>
             
             <svg
               width="100%"
@@ -117,12 +117,12 @@ export default function ChatBot({ context = 'dashboard' }) {
               viewBox="0 0 100 100"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="relative filter drop-shadow-[0_4px_12px_rgba(186,90,90,0.35)] group-hover:drop-shadow-[0_8px_18px_rgba(186,90,90,0.5)] group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300"
+              className="relative filter drop-shadow-[0_4px_12px_rgba(94,133,153,0.35)] group-hover:drop-shadow-[0_8px_18px_rgba(94,133,153,0.5)] group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300"
             >
               {/* Speech bubble pointer / tail */}
               <path
                 d="M 72 72 C 77 77, 82 85, 84 90 C 81 81, 80 76, 79 70 Z"
-                className="fill-[#BA5A5A] stroke-[#BA5A5A]"
+                className="fill-[#5E8599] stroke-[#5E8599]"
                 strokeWidth="1"
                 strokeLinejoin="round"
               />
@@ -132,7 +132,7 @@ export default function ChatBot({ context = 'dashboard' }) {
                 cx="47"
                 cy="47"
                 r="41"
-                className="fill-[#FAF5F5] dark:fill-stone-900 stroke-[#BA5A5A]"
+                className="fill-[#FAF5F5] dark:fill-stone-900 stroke-[#5E8599]"
                 strokeWidth="3.5"
               />
 
@@ -148,7 +148,7 @@ export default function ChatBot({ context = 'dashboard' }) {
                 {/* Road background */}
                 <path
                   d="M -10 88 C 25 71, 55 69, 90 73 L 95 110 L -10 110 Z"
-                  className="fill-[#D8A4A4] dark:fill-[#5C3C3C]"
+                  className="fill-[#8A9E85] dark:fill-[#4A5D46]"
                 />
                 {/* Road left boundary/curb */}
                 <path
@@ -195,15 +195,15 @@ export default function ChatBot({ context = 'dashboard' }) {
               {/* Chat bubble outline */}
               <path
                 d="M 44 36 H 70 C 73.3 36, 76 38.7, 76 42 V 54 C 76 57.3, 73.3 60, 70 60 H 60.5 L 59 69 L 55.5 60 H 44 C 40.7 60, 38 57.3, 38 54 V 42 C 38 38.7, 40.7 36, 44 36 Z"
-                className="fill-white dark:fill-stone-800 stroke-[#BA5A5A]"
+                className="fill-white dark:fill-stone-800 stroke-[#5E8599]"
                 strokeWidth="2.6"
                 strokeLinejoin="round"
               />
 
               {/* Three dots inside chat bubble */}
-              <circle cx="47.5" cy="48" r="2.2" className="fill-[#BA5A5A]" />
-              <circle cx="57" cy="48" r="2.2" className="fill-[#BA5A5A]" />
-              <circle cx="66.5" cy="48" r="2.2" className="fill-[#BA5A5A]" />
+              <circle cx="47.5" cy="48" r="2.2" className="fill-[#5E8599]" />
+              <circle cx="57" cy="48" r="2.2" className="fill-[#5E8599]" />
+              <circle cx="66.5" cy="48" r="2.2" className="fill-[#5E8599]" />
             </svg>
           </div>
         )}
@@ -213,14 +213,14 @@ export default function ChatBot({ context = 'dashboard' }) {
       {isOpen && (
         <div className="fixed bottom-24 right-6 w-80 sm:w-96 h-[500px] bg-white dark:bg-gray-950 border border-gray-150 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col z-[9999] overflow-hidden animate-fadeIn">
           {/* Header */}
-          <div className="bg-gradient-to-r from-[#BA5A5A] to-[#A04848] p-4 text-white flex items-center gap-3 shadow-sm">
+          <div className="bg-gradient-to-r from-[#5E8599] to-[#4A6C7D] p-4 text-white flex items-center gap-3 shadow-sm">
             <div className="bg-white/20 p-2 rounded-full">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z" />
               </svg>
             </div>
             <div>
-              <h3 className="font-bold">ParkSense AI</h3>
+              <h3 className="font-bold">मार्ग Sense</h3>
               <p className="text-xs text-white/80">
                 {context === 'login' ? 'Public Assistant' : 'Command Center Assistant'}
               </p>
@@ -234,7 +234,7 @@ export default function ChatBot({ context = 'dashboard' }) {
                 <div
                   className={`max-w-[80%] p-3 rounded-2xl text-sm ${
                     msg.role === 'user'
-                      ? 'bg-[#BA5A5A] text-white rounded-tr-none'
+                      ? 'bg-[#5E8599] text-white rounded-tr-none'
                       : 'bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 text-gray-700 dark:text-gray-200 rounded-tl-none shadow-sm'
                   }`}
                 >
@@ -245,9 +245,9 @@ export default function ChatBot({ context = 'dashboard' }) {
             {isLoading && (
               <div className="flex justify-start">
                 <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 text-gray-500 max-w-[80%] p-4 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-2">
-                  <div className="w-2 h-2 bg-[#BA5A5A]/50 rounded-full animate-bounce" />
-                  <div className="w-2 h-2 bg-[#BA5A5A]/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  <div className="w-2 h-2 bg-[#BA5A5A]/50 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                  <div className="w-2 h-2 bg-[#5E8599]/50 rounded-full animate-bounce" />
+                  <div className="w-2 h-2 bg-[#5E8599]/50 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  <div className="w-2 h-2 bg-[#5E8599]/50 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
                 </div>
               </div>
             )}
@@ -261,13 +261,13 @@ export default function ChatBot({ context = 'dashboard' }) {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder={context === 'login' ? 'Ask about login or access...' : 'Ask about live congestion...'}
-              className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#BA5A5A] text-gray-800 dark:text-gray-200 transition-colors"
+              className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#5E8599] text-gray-800 dark:text-gray-200 transition-colors"
               disabled={isLoading}
             />
             <button
               type="submit"
               disabled={!input.trim() || isLoading}
-              className="p-2 bg-[#BA5A5A] hover:bg-[#A04848] text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              className="p-2 bg-[#5E8599] hover:bg-[#4A6C7D] text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />

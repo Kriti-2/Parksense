@@ -21,7 +21,7 @@ export default function Login() {
   // Force Light Mode
   useEffect(() => {
     document.documentElement.classList.remove('dark');
-    localStorage.setItem('parksense_theme', 'light');
+    localStorage.setItem('margsense_theme', 'light');
   }, []);
 
   // Login submission
@@ -42,10 +42,10 @@ export default function Login() {
   // Populate Demo Credentials (Citizen vs Officer)
   function fillDemo() {
     if (mode === 'officer') {
-      setEmail('officer@parksense.demo');
+      setEmail('officer@margsense.demo');
       setPassword('officer123');
     } else {
-      setEmail('user@parksense.demo');
+      setEmail('user@margsense.demo');
       setPassword('user123');
     }
   }
@@ -91,14 +91,8 @@ export default function Login() {
             {/* Logo, Header, and Pulsing Live Badge */}
             <div className="mb-4 flex flex-col items-center text-center">
               <div className="flex items-center justify-center gap-2 mb-1">
-                {/* Neutral Glass Map-Pin Icon */}
-                <div className="flex h-8.5 w-8.5 items-center justify-center rounded-xl bg-white/10 border border-white/20 shadow-lg">
-                  <svg className="h-4.5 w-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <h1 className="text-xl font-black tracking-tight text-white select-none">ParkSense AI</h1>
+                <img src="/logo.png" alt="Logo" className="h-10 w-10 object-contain rounded-xl" />
+                <h1 className="text-xl font-black tracking-tight text-white select-none">मार्ग Sense</h1>
               </div>
               
               {/* Live Badge */}
@@ -154,7 +148,7 @@ export default function Login() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300 placeholder-white/30"
-                  placeholder={mode === 'officer' ? 'officer@parksense.demo' : 'you@email.com'}
+                  placeholder={mode === 'officer' ? 'officer@margsense.demo' : 'you@email.com'}
                 />
               </div>
               

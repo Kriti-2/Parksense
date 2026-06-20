@@ -94,7 +94,7 @@ def get_notices():
                 "source": "DULT",
                 "timestamp": datetime.utcnow().isoformat(),
                 "title": "🚗 Indiranagar IoT Smart Parking Live",
-                "message": "New IoT-enabled smart parking slots are now live on Indiranagar 100 Feet Road. Book slots in real-time via ParkSense.",
+                "message": "New IoT-enabled smart parking slots are now live on Indiranagar 100 Feet Road. Book slots in real-time via मार्ग Sense.",
             },
             {
                 "id": "civic-metro-extension",

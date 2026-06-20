@@ -42,9 +42,7 @@ export default function UserLayout({ children }) {
 
           {/* Logo + Branding */}
           <div className="flex items-center gap-2.5 shrink-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#BA5A5A] text-sm font-black text-white shadow-sm">
-              P
-            </div>
+            <img src="/logo.png" alt="Logo" className="h-9 w-9 object-contain rounded-lg" />
             <div className="leading-tight">
               <div className="text-[15px] font-bold text-gray-900 dark:text-white">{t('appTitle')}</div>
               <div className="text-[10px] text-gray-400 dark:text-gray-500 font-medium hidden sm:block">{t('tagline')}</div>
@@ -61,7 +59,7 @@ export default function UserLayout({ children }) {
                 className={({ isActive }) =>
                   `relative px-3.5 py-2 text-sm font-semibold transition-colors duration-150 cursor-pointer rounded-md ${
                     isActive
-                      ? 'text-[#BA5A5A] dark:text-[#BA5A5A]'
+                      ? 'text-[#5E8599] dark:text-[#5E8599]'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/5'
                   }`
                 }
@@ -70,7 +68,7 @@ export default function UserLayout({ children }) {
                   <>
                     {t(link.key)}
                     {isActive && (
-                      <span className="absolute bottom-0 left-3.5 right-3.5 h-0.5 bg-[#BA5A5A] rounded-full" />
+                      <span className="absolute bottom-0 left-3.5 right-3.5 h-0.5 bg-[#5E8599] rounded-full" />
                     )}
                   </>
                 )}
@@ -82,9 +80,9 @@ export default function UserLayout({ children }) {
           <div className="hidden md:flex items-center gap-3 shrink-0">
             <Link
               to="/"
-              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-[#BA5A5A] transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-[#5E8599] transition-colors cursor-pointer"
             >
-              <span className={`h-2 w-2 rounded-full ${connected ? 'bg-[#BA5A5A] animate-pulse' : 'bg-gray-300'}`} />
+              <span className={`h-2 w-2 rounded-full ${connected ? 'bg-[#8A9E85] animate-pulse' : 'bg-gray-300'}`} />
               {t('liveFeed')}
             </Link>
             <div className="h-4 w-px bg-gray-200 dark:bg-white/10" />
@@ -113,7 +111,7 @@ export default function UserLayout({ children }) {
                 <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 shadow-lg py-1 z-50 animate-fadeIn">
                   <div className="px-3 py-2 border-b border-gray-100 dark:border-white/10">
                     <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">{user?.full_name || 'Citizen'}</p>
-                    <p className="text-[10px] text-gray-400 truncate">{user?.email || 'citizen@parksense.in'}</p>
+                    <p className="text-[10px] text-gray-400 truncate">{user?.email || 'citizen@margsense.in'}</p>
                   </div>
                   <button
                     onClick={() => { setProfileOpen(false); handleLogout(); }}
@@ -158,7 +156,7 @@ export default function UserLayout({ children }) {
                 className={({ isActive }) =>
                   `block rounded-lg px-4 py-2.5 text-sm font-semibold transition-colors cursor-pointer ${
                     isActive
-                      ? 'bg-[#F9EDED] dark:bg-[#BA5A5A]/10 text-[#BA5A5A] dark:text-[#BA5A5A]'
+                      ? 'bg-[#EBF2F5] dark:bg-[#5E8599]/10 text-[#5E8599] dark:text-[#5E8599]'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5'
                   }`
                 }

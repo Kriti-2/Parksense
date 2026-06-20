@@ -15,8 +15,8 @@ export const translations = {
     officer: "Officer",
 
     // Branding
-    tagline: "Making Invisible Congestion Visible.",
-    appTitle: "ParkSense",
+    tagline: "Making invisible congestion visible.",
+    appTitle: "मार्ग Sense",
 
     // Common UI
     loading: "Loading...",
@@ -35,7 +35,7 @@ export const translations = {
     activeHotspots: "Active Hotspots",
     violationsLast24h: "Violations (Last 24h)",
     overview: "Overview",
-    dashboardSubtitle: "Bengaluru parking congestion & enforcement dashboard",
+    dashboardSubtitle: "Bengaluru traffic congestion & enforcement dashboard",
     liveOverviewTab: "📊 Live Overview",
     economicImpactTab: "💸 Economic Impact",
     patrolOperationsTab: "🚨 Patrol Operations",
@@ -85,8 +85,8 @@ export const translations = {
     officer: "अधिकारी",
 
     // Branding
-    tagline: "अदृश्य भीड़ को दृश्यमान बनाना।",
-    appTitle: "पार्कसेंस",
+    tagline: "अदृश्य भीड़भाड़ को दृश्यमान बनाना।",
+    appTitle: "मार्ग Sense",
 
     // Common UI
     loading: "लोड हो रहा है...",
@@ -105,7 +105,7 @@ export const translations = {
     activeHotspots: "सक्रिय हॉटस्पॉट",
     violationsLast24h: "उल्लंघन (पिछले 24 घंटे)",
     overview: "सिंहावलोकन",
-    dashboardSubtitle: "बेंगलुरु पार्किंग भीड़भाड़ और प्रवर्तन डैशबोर्ड",
+    dashboardSubtitle: "बेंगलुरु यातायात भीड़भाड़ और प्रवर्तन डैशबोर्ड",
     liveOverviewTab: "📊 लाइव विवरण",
     economicImpactTab: "💸 आर्थिक प्रभाव",
     patrolOperationsTab: "🚨 गश्ती अभियान",
@@ -156,7 +156,7 @@ export const translations = {
 
     // Branding
     tagline: "ಅದೃಶ್ಯ ದಟ್ಟಣೆಯನ್ನು ದೃಶ್ಯೀಕರಿಸುವುದು.",
-    appTitle: "ಪಾರ್ಕ್ ಸೆನ್ಸ್",
+    appTitle: "ಮಾರ್ಗ Sense",
 
     // Common UI
     loading: "ಲೋಡ್ ಆಗುತ್ತಿದೆ...",
@@ -175,7 +175,7 @@ export const translations = {
     activeHotspots: "ಸಕ್ರಿಯ ಹಾಟ್‌ಸ್ಪಾಟ್‌ಗಳು",
     violationsLast24h: "ಉಲ್ಲಂಘನೆಗಳು (ಕಳೆದ 24 ಗಂಟೆ)",
     overview: "ಅವಲೋಕನ",
-    dashboardSubtitle: "ಬೆಂಗಳೂರು ಪಾರ್ಕಿಂಗ್ ದಟ್ಟಣೆ ಮತ್ತು ಜಾರಿ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
+    dashboardSubtitle: "ಬೆಂಗಳೂರು ರಸ್ತೆ ದಟ್ಟಣೆ ಮತ್ತು ಜಾರಿ ಡ್ಯಾಶ್‌ಬೋರ್ಡ್",
     liveOverviewTab: "📊 ಲೈವ್ ಅವಲೋಕನ",
     economicImpactTab: "💸 ಆರ್ಥಿಕ ಪರಿಣಾಮ",
     patrolOperationsTab: "🚨 ಗಸ್ತು ಕಾರ್ಯಾಚರಣೆ",

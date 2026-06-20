@@ -14,7 +14,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 def _dev_officer() -> User:
     return User(
         id=0,
-        email="officer@parksense.demo",
+        email="officer@margsense.demo",
         full_name="Officer Demo",
         role=UserRole.OFFICER,
     )

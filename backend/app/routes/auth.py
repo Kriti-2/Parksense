@@ -68,7 +68,7 @@ def login(payload: UserLogin, db: Session = Depends(get_db)):
             access_token=token,
             role="officer",
             expires_in_minutes=settings.jwt_expire_minutes,
-            email=f"{settings.officer_username}@parksense.local",
+            email=f"{settings.officer_username}@margsense.local",
             full_name="Config Officer",
         )
 
@@ -90,7 +90,7 @@ def ingest_token(request: Request, body: LoginRequest):
         access_token=token,
         role="ingest",
         expires_in_minutes=settings.jwt_expire_minutes,
-        email=f"{body.username}@parksense.local",
+        email=f"{body.username}@margsense.local",
         full_name="Ingestion Client",
     )
 
@@ -106,8 +106,8 @@ def me(user: User = Depends(get_current_user)):
 def seed_demo_users(db: Session) -> None:
     """Create demo accounts for hackathon demos."""
     demos = [
-        ("user@parksense.demo", "User Demo", "user123", UserRole.USER),
-        ("officer@parksense.demo", "Officer Demo", "officer123", UserRole.OFFICER),
+        ("user@margsense.demo", "User Demo", "user123", UserRole.USER),
+        ("officer@margsense.demo", "Officer Demo", "officer123", UserRole.OFFICER),
     ]
     for email, name, password, role in demos:
         if not db.query(User).filter(User.email == email).first():
@@ -120,4 +120,4 @@ def seed_demo_users(db: Session) -> None:
                 )
             )
     db.commit()
-    logger.info("Demo users seeded (user@parksense.demo / officer@parksense.demo)")
+    logger.info("Demo users seeded (user@margsense.demo / officer@margsense.demo)")

@@ -1,4 +1,4 @@
-"""ParkSense AI backend entry point."""
+"""मार्ग Sense backend entry point."""
 
 import uvicorn
 

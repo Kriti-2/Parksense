@@ -13,18 +13,18 @@
 }
 
 :root {
-  --command-bg: #EFEFEA;
+  --command-bg: #FFFFFF;
   --command-panel: #FFFFFF;
-  --command-border: #E5EEE4;
-  --command-accent: #486E5D;
-  --command-warning: #D29C42;
+  --command-border: #E2E8F0;
+  --command-accent: #5E8599;
+  --command-warning: #D48A6F;
   --command-danger: #C27A7A;
-  --command-success: #486E5D;
-  --command-muted: #6B7C73;
-  --command-text: #2F3E46;
-  --command-title: #1F2925;
-  --command-panel-glass: rgba(255, 255, 255, 0.65);
-  --command-border-glass: rgba(229, 238, 228, 0.5);
+  --command-success: #8A9E85;
+  --command-muted: #64748B;
+  --command-text: #334155;
+  --command-title: #1E293B;
+  --command-panel-glass: rgba(255, 255, 255, 0.75);
+  --command-border-glass: rgba(226, 232, 240, 0.6);
 }
 
 
@@ -198,18 +198,18 @@ body {
 /* Layout Glass theme - makes the inside look like a premium dark glass command center */
 .layout-glass {
   /* Dynamic variable redefinition for Light Mode (frosted white glass) */
-  --command-bg: #F4F6F5;
-  --command-panel: rgba(255, 255, 255, 0.42);
-  --command-border: rgba(255, 255, 255, 0.25);
-  --command-accent: #2563eb;
-  --command-warning: #D29C42;
+  --command-bg: #F8FAFC;
+  --command-panel: rgba(255, 255, 255, 0.55);
+  --command-border: rgba(94, 133, 153, 0.15);
+  --command-accent: #5E8599;
+  --command-warning: #D48A6F;
   --command-danger: #C27A7A;
-  --command-success: #2563eb;
+  --command-success: #8A9E85;
   --command-muted: #475569;
   --command-text: #1E293B;
   --command-title: #0F172A;
-  --command-panel-glass: rgba(255, 255, 255, 0.42);
-  --command-border-glass: rgba(255, 255, 255, 0.25);
+  --command-panel-glass: rgba(255, 255, 255, 0.55);
+  --command-border-glass: rgba(94, 133, 153, 0.15);
 
   color: #1E293B !important;
 }
@@ -623,29 +623,29 @@ body {
   color: #34d399 !important;
 }
 
-/* Sidebar and Navbar Accent Variable Overrides (replacing green with blue accents) */
+/* Sidebar and Navbar Accent Variable Overrides (matching new brand colors) */
 aside,
 header {
-  --command-accent: #2563eb !important;
-  --color-command-accent: #2563eb !important;
-  --command-success: #2563eb !important;
-  --color-command-success: #2563eb !important;
+  --command-accent: #5E8599 !important;
+  --color-command-accent: #5E8599 !important;
+  --command-success: #8A9E85 !important;
+  --color-command-success: #8A9E85 !important;
 }
 
 .dark aside,
 .dark header {
-  --command-accent: #60a5fa !important;
-  --color-command-accent: #60a5fa !important;
-  --command-success: #60a5fa !important;
-  --color-command-success: #60a5fa !important;
+  --command-accent: #789FAF !important;
+  --color-command-accent: #789FAF !important;
+  --command-success: #9BBE96 !important;
+  --color-command-success: #9BBE96 !important;
 }
 
 .layout-glass aside,
 .layout-glass header {
-  --command-accent: #38bdf8 !important;
-  --color-command-accent: #38bdf8 !important;
-  --command-success: #38bdf8 !important;
-  --color-command-success: #38bdf8 !important;
+  --command-accent: #5E8599 !important;
+  --color-command-accent: #5E8599 !important;
+  --command-success: #8A9E85 !important;
+  --color-command-success: #8A9E85 !important;
 }
 
 

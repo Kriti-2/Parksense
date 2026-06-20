@@ -14,14 +14,14 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    app_name: str = "ParkSense AI"
+    app_name: str = "मार्ग Sense"
     app_env: str = "development"
     debug: bool = True
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 
-    database_url: str = f"sqlite:///{BASE_DIR / 'data' / 'parksense.db'}"
+    database_url: str = f"sqlite:///{BASE_DIR / 'data' / 'margsense.db'}"
 
     violations_csv_path: str = str(
         BASE_DIR.parent / "jan to may police violation_anonymized791b166 (2).csv"
@@ -56,9 +56,9 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = 480
     ingest_api_key: str = ""
     officer_username: str = "officer"
-    officer_password: str = "parksense-demo"
+    officer_password: str = "margsense-demo"
     ingest_username: str = "btp-ingest"
-    ingest_password: str = "parksense-ingest"
+    ingest_password: str = "margsense-ingest"
 
     # Phase 2 — rate limits (slowapi format)
     rate_limit_public: str = "120/minute"

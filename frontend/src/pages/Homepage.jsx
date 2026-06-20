@@ -82,8 +82,8 @@ function HeroSection({ analytics, lastTick, connected }) {
         <div className="absolute inset-0 z-30 flex flex-col justify-center px-6 sm:px-10 md:px-14" style={{ maxWidth: '520px' }}>
           {/* Label */}
           <div className="flex items-center gap-2 mb-2 sm:mb-4">
-            <div className="h-px w-8 bg-[#BA5A5A]" />
-            <span className="text-[#BA5A5A] text-xs font-bold tracking-widest uppercase">ParkSense</span>
+            <div className="h-px w-8 bg-[#5E8599]" />
+            <span className="text-[#5E8599] text-xs font-bold tracking-widest uppercase">मार्ग Sense</span>
           </div>
 
           {/* Headline */}
@@ -104,7 +104,7 @@ function HeroSection({ analytics, lastTick, connected }) {
                 const el = document.getElementById('overview');
                 if (el) el.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="flex items-center gap-2 bg-[#BA5A5A] hover:bg-[#A04848] text-white text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg shadow-lg transition-colors cursor-pointer"
+              className="flex items-center gap-2 bg-[#5E8599] hover:bg-[#4A6C7D] text-white text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg shadow-lg transition-colors cursor-pointer"
             >
               <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
               Live Feed
@@ -160,11 +160,11 @@ function HeroSection({ analytics, lastTick, connected }) {
         <div className="flex items-stretch min-w-max md:min-w-0">
           {/* LIVE indicator */}
           <div className="flex items-center gap-3 px-5 py-3.5 border-r border-gray-100">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#F9EDED] shrink-0">
-              <span className="h-3 w-3 rounded-full bg-[#BA5A5A] animate-pulse block" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#EBF2F5] shrink-0">
+              <span className="h-3 w-3 rounded-full bg-[#8A9E85] animate-pulse block" />
             </div>
             <div>
-              <div className="text-xs font-black text-[#BA5A5A] tracking-wider">LIVE</div>
+              <div className="text-xs font-black text-[#8A9E85] tracking-wider">LIVE</div>
               <div className="text-[10px] text-gray-400">Live Feed</div>
             </div>
           </div>
@@ -290,7 +290,7 @@ export default function Homepage() {
         <HeroSection analytics={null} lastTick={null} connected={false} />
         <div className="flex h-40 items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#BA5A5A] border-t-transparent" />
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#5E8599] border-t-transparent" />
             <p className="mt-3 text-xs text-gray-400">Loading dashboard data...</p>
           </div>
         </div>

@@ -11,7 +11,7 @@ export default function NoticesBanner() {
   const [isPaused, setIsPaused] = useState(false);
   const [dismissedIds, setDismissedIds] = useState(() => {
     try {
-      const s = localStorage.getItem('parksense_dismissed_notices');
+      const s = localStorage.getItem('margsense_dismissed_notices');
       return s ? JSON.parse(s) : [];
     } catch {
       return [];
@@ -24,7 +24,7 @@ export default function NoticesBanner() {
   const { lang, changeLanguage } = useTranslation();
   const [isCrazyMode, setIsCrazyMode] = useState(() => {
     try {
-      const s = localStorage.getItem('parksense_crazy_mode');
+      const s = localStorage.getItem('margsense_crazy_mode');
       return s !== null ? JSON.parse(s) : true;
     } catch {
       return true;
@@ -32,7 +32,7 @@ export default function NoticesBanner() {
   });
   const [isMuted, setIsMuted] = useState(() => {
     try {
-      const s = localStorage.getItem('parksense_mute_mode');
+      const s = localStorage.getItem('margsense_mute_mode');
       return s !== null ? JSON.parse(s) : false;
     } catch {
       return false;
@@ -99,11 +99,11 @@ export default function NoticesBanner() {
     } else if (notice.id === 'civic-smart-parking') {
       hi = {
         title: '🚗 इंदिरानगर IoT स्मार्ट पार्किंग लाइव',
-        message: 'इंदिरानगर 100 फीट रोड पर नए IoT-सक्षम स्मार्ट पार्किंग स्लॉट अब लाइव हैं। ParkSense से स्लॉट बुक करें।',
+        message: 'इंदिरानगर 100 फीट रोड पर नए IoT-सक्षम स्मार्ट पार्किंग स्लॉट अब लाइव हैं। मार्ग Sense से स्लॉट बुक करें।',
       };
       kn = {
         title: '🚗 ಇಂದಿರಾನಗರ IoT ಸ್ಮಾರ್ಟ್ ಪಾರ್ಕಿಂಗ್ ಲೈವ್',
-        message: 'ಇಂದಿರಾ ನಗರ 100 ಅಡಿ ರಸ್ತೆಯಲ್ಲಿ ಹೊಸ IoT ಆಧಾರಿತ ಸ್ಮಾರ್ಟ್ ಪಾರ್ಕಿಂಗ್ ಲಭ್ಯವಿದೆ. ಪಾರ್ಕ್ ಸೆನ್ಸ್ ಮೂಲಕ ಬುಕ್ ಮಾಡಿ.',
+        message: 'ಇಂದಿರಾ ನಗರ 100 ಅಡಿ ರಸ್ತೆಯಲ್ಲಿ ಹೊಸ IoT ಆಧಾರಿತ ಸ್ಮಾರ್ಟ್ ಪಾರ್ಕಿಂಗ್ ಲಭ್ಯವಿದೆ. ಮಾರ್ಗ Sense ಮೂಲಕ ಬುಕ್ ಮಾಡಿ.',
       };
     } else if (notice.id === 'civic-metro-extension') {
       hi = {
@@ -153,7 +153,7 @@ export default function NoticesBanner() {
         if (staticTrans && staticTrans.title && text === title) return staticTrans.title;
         if (staticTrans && staticTrans.message && text === message) return staticTrans.message;
 
-        const cacheKey = `parksense_trans_${lang}_${text}`;
+        const cacheKey = `margsense_trans_${lang}_${text}`;
         const cached = localStorage.getItem(cacheKey);
         if (cached) return cached;
 
@@ -323,7 +323,7 @@ export default function NoticesBanner() {
     playSynthSound('success');
     const next = [...dismissedIds, id];
     setDismissedIds(next);
-    localStorage.setItem('parksense_dismissed_notices', JSON.stringify(next));
+    localStorage.setItem('margsense_dismissed_notices', JSON.stringify(next));
   };
 
   const toggleLang = () => {
@@ -336,13 +336,13 @@ export default function NoticesBanner() {
     const next = !isCrazyMode;
     setIsCrazyMode(next);
     playSynthSound('success');
-    localStorage.setItem('parksense_crazy_mode', JSON.stringify(next));
+    localStorage.setItem('margsense_crazy_mode', JSON.stringify(next));
   };
 
   const toggleMute = () => {
     const next = !isMuted;
     setIsMuted(next);
-    localStorage.setItem('parksense_mute_mode', JSON.stringify(next));
+    localStorage.setItem('margsense_mute_mode', JSON.stringify(next));
     if (!next) {
       setTimeout(() => {
         try {
@@ -753,7 +753,7 @@ export default function NoticesBanner() {
 
             <div className="flex justify-between items-center mt-4 border-t border-command-border/40 pt-3 shrink-0 text-xs text-command-muted relative z-20">
               <span>{lang === 'en' ? 'Active notices' : 'सक्रिय सूचनाएँ'}: {activeNotices.length}</span>
-              <button onClick={() => { playSynthSound('success'); localStorage.removeItem('parksense_dismissed_notices'); setDismissedIds([]); }}
+              <button onClick={() => { playSynthSound('success'); localStorage.removeItem('margsense_dismissed_notices'); setDismissedIds([]); }}
                 className="text-command-accent hover:underline cursor-pointer font-bold">
                 {lang === 'en' ? 'Reset All Dismissed' : 'सभी खारिज रीसेट करें'}
               </button>

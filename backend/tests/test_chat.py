@@ -76,7 +76,7 @@ def test_chat_endpoint_login_context(auth_client, monkeypatch):
         
         call_kwargs = mock_generate.call_args[1]
         # Login context should contain public portal assistance guidance
-        assert "ParkSense AI Public Assistant" in call_kwargs["contents"]
+        assert "मार्ग Sense Public Assistant" in call_kwargs["contents"]
         assert "How to login" in call_kwargs["contents"]
         # Ensure it does NOT contain sensitive officer/dashboard info
         assert "LIVE DASHBOARD CONTEXT" not in call_kwargs["contents"]

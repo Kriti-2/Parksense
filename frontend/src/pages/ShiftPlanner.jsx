@@ -254,16 +254,16 @@ export default function ShiftPlannerPage() {
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (complianceScore / 100) * circumference;
 
-  let gaugeColor = 'stroke-command-danger';
+  let gaugeColor = 'text-command-danger';
   let gaugeBg = 'bg-command-danger/10 text-command-danger border-command-danger/20';
   let statusText = 'CRITICAL CORRIDOR RISK';
   
   if (complianceScore >= 75) {
-    gaugeColor = 'stroke-command-success';
+    gaugeColor = 'text-command-success';
     gaugeBg = 'bg-command-success/15 text-command-success border-command-success/20';
     statusText = 'OPTIMAL CIVIC SECURITY';
   } else if (complianceScore >= 50) {
-    gaugeColor = 'stroke-command-warning';
+    gaugeColor = 'text-command-warning';
     gaugeBg = 'bg-command-warning/15 text-command-warning border-command-warning/20';
     statusText = 'CAUTION: UNDERSTAFFED';
   }
@@ -342,9 +342,9 @@ export default function ShiftPlannerPage() {
             
             {/* SVG Circular Ring Gauge */}
             <div className="relative flex items-center justify-center">
-              <svg className="h-32 w-32 transform -rotate-90">
+              <svg className="h-32 w-32 transform -rotate-90" viewBox="0 0 128 128">
                 <circle
-                  className="text-command-bg stroke-current"
+                  className="text-command-border stroke-current"
                   strokeWidth={strokeWidth}
                   fill="transparent"
                   r={normalizedRadius}

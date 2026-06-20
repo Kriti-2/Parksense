@@ -34,7 +34,7 @@ function ComplianceRing({ score }) {
 
   return (
     <div className="relative flex items-center justify-center h-16 w-16 shrink-0">
-      <svg className="h-16 w-16 transform -rotate-90">
+      <svg className="h-16 w-16 transform -rotate-90" viewBox="0 0 64 64">
         <circle
           className="text-command-border stroke-current"
           strokeWidth={strokeWidth}
@@ -441,11 +441,12 @@ export default function UserCongestion() {
           )}
 
           <div className="space-y-3 text-left">
-            <h2 className="text-sm font-bold text-white uppercase tracking-wider"><TranslatedText text="Zone Advisories" /></h2>
+            <h2 className="text-sm font-bold text-gray-900 dark:text-white uppercase tracking-wider"><TranslatedText text="Zone Advisories" /></h2>
             {zones.map((zone) => (
               <div
                 key={zone.zone}
                 className="flex items-start justify-between rounded-xl border border-command-border bg-command-panel p-4 interactive-card shadow-sm"
+                style={{ borderLeft: `4px solid ${ADVISORY_COLORS[zone.color] || '#486E5D'}` }}
               >
                 <div>
                   <div className="flex items-center gap-2">
@@ -460,8 +461,8 @@ export default function UserCongestion() {
                     </span>
                     <span className="font-semibold text-gray-800 text-sm">{t(zone.zone)}</span>
                   </div>
-                  <p className="mt-2 text-xs text-gray-600 leading-relaxed"><TranslatedText text={zone.tip} /></p>
-                  <p className="mt-1 text-[10px] text-gray-500">
+                  <p className="mt-2 text-xs text-slate-700 dark:text-slate-300 leading-relaxed"><TranslatedText text={zone.tip} /></p>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
                     <TranslatedText text="Speed" />: {zone.current_speed_kmh} km/h (<TranslatedText text="normally" /> {zone.baseline_speed_kmh}) ·{' '}
                     {zone.parking_violations_24h} <TranslatedText text="violations (24h)" />
                   </p>

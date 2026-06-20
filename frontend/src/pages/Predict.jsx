@@ -54,6 +54,8 @@ export default function Predict() {
   const [selectedZone, setSelectedZone] = useState(null);
   const [selectedHour, setSelectedHour] = useState(new Date().getHours());
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showAllZones, setShowAllZones] = useState(false);
+  const [rankingMetric, setRankingMetric] = useState('risk');
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -112,13 +114,17 @@ export default function Predict() {
   }, [zones, selectedHour]);
 
   const chartData = useMemo(() => {
-    return simulatedZones.map((z) => ({
+    const data = simulatedZones.map((z) => ({
       zone: z.zone.replace(' Layout', '').replace(' Board', ''),
       risk: z.simulatedRisk,
       violations: z.simulatedViolations,
       rank: z.simulatedRank,
     }));
-  }, [simulatedZones]);
+    if (rankingMetric === 'violations') {
+      return [...data].sort((a, b) => b.violations - a.violations);
+    }
+    return data;
+  }, [simulatedZones, rankingMetric]);
 
   const simulatedZoneIntensity = useMemo(() => {
     if (!heatmap?.zone_intensity) return {};
@@ -330,9 +336,13 @@ export default function Predict() {
                 i
               </div>
             </div>
-            <select className="text-xs font-bold text-gray-500 border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white outline-none cursor-pointer hover:border-gray-300 shadow-sm">
-              <option>Risk Score</option>
-              <option>Violations</option>
+            <select
+              value={rankingMetric}
+              onChange={(e) => setRankingMetric(e.target.value)}
+              className="text-xs font-bold text-gray-500 border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white outline-none cursor-pointer hover:border-gray-300 shadow-sm"
+            >
+              <option value="risk">Risk Score</option>
+              <option value="violations">Violations</option>
             </select>
           </div>
 
@@ -342,14 +352,18 @@ export default function Predict() {
                 <XAxis type="number" hide />
                 <YAxis dataKey="zone" type="category" width={80} tickLine={false} axisLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 700 }} />
                 <Tooltip
+                  formatter={(value, name) => [
+                    value,
+                    name === 'risk' ? 'Risk Score' : 'Predicted Violations'
+                  ]}
                   contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
                   labelStyle={{ color: '#1F2937', fontWeight: 'bold' }}
                 />
-                <Bar dataKey="risk" radius={[0, 6, 6, 0]} barSize={12}>
+                <Bar dataKey={rankingMetric} radius={[0, 6, 6, 0]} barSize={12}>
                   {chartData.map((_, i) => (
                     <Cell key={i} fill={RISK_COLORS[i % RISK_COLORS.length]} />
                   ))}
-                  <LabelList dataKey="risk" position="right" style={{ fill: '#4B5563', fontSize: 11, fontWeight: 800 }} />
+                  <LabelList dataKey={rankingMetric} position="right" style={{ fill: '#4B5563', fontSize: 11, fontWeight: 800 }} />
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
@@ -361,14 +375,23 @@ export default function Predict() {
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-gray-900">Top High-Risk Zones</h3>
-              <button className="text-xs font-bold text-[#BA5A5A] hover:underline cursor-pointer">
-                View all →
+              <button
+                onClick={() => setShowAllZones(prev => !prev)}
+                className="text-xs font-bold text-[#BA5A5A] hover:underline cursor-pointer"
+              >
+                {showAllZones ? 'Show less' : 'View all →'}
               </button>
             </div>
 
             <div className="divide-y divide-gray-50">
-              {simulatedZones.slice(0, 3).map((zone, idx) => {
-                const rankColorClass = idx === 0 ? 'bg-[#FDF2F2] text-[#BA5A5A]' : idx === 1 ? 'bg-[#FEF6EC] text-[#D29C42]' : 'bg-[#F0FDF4] text-[#489C6F]';
+              {simulatedZones.slice(0, showAllZones ? 10 : 3).map((zone, idx) => {
+                const rankColorClass = idx === 0
+                  ? 'bg-[#FDF2F2] text-[#BA5A5A]'
+                  : idx === 1
+                  ? 'bg-[#FEF6EC] text-[#D29C42]'
+                  : idx === 2
+                  ? 'bg-[#F0FDF4] text-[#489C6F]'
+                  : 'bg-gray-50 text-gray-500';
                 return (
                   <div key={zone.zone} className="flex items-center justify-between py-4">
                     <div className="flex items-center gap-3 min-w-0">
@@ -401,7 +424,7 @@ export default function Predict() {
                         </defs>
                         {/* Area Path */}
                         <path
-                          d={`${generateSparklineAreaPath(zone.peak_hour)} L 80,24 L 0,24 Z`}
+                           d={`${generateSparklineAreaPath(zone.peak_hour)} L 80,24 L 0,24 Z`}
                           fill={`url(#grad-${idx})`}
                         />
                         {/* Line Path */}
@@ -437,8 +460,11 @@ export default function Predict() {
             </div>
           </div>
 
-          <button className="w-full text-center text-xs font-bold text-[#BA5A5A] bg-[#FDF2F2] hover:bg-[#FBE8E8] py-3.5 rounded-xl transition-all cursor-pointer mt-4">
-            View all 10 high-risk zones →
+          <button
+            onClick={() => setShowAllZones(prev => !prev)}
+            className="w-full text-center text-xs font-bold text-[#BA5A5A] bg-[#FDF2F2] hover:bg-[#FBE8E8] py-3.5 rounded-xl transition-all cursor-pointer mt-4"
+          >
+            {showAllZones ? 'Show less' : 'View all 10 high-risk zones →'}
           </button>
         </div>
       </div>

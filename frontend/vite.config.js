@@ -28,6 +28,9 @@ export default defineConfig({
             if (id.includes('leaflet') || id.includes('react-leaflet')) {
               return 'map-vendor';
             }
+            if (id.includes('maplibre-gl')) {
+              return 'maplibre-vendor';
+            }
             if (id.includes('recharts')) {
               return 'chart-vendor';
             }

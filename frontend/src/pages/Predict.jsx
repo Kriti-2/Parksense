@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelL
 import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import HeatMap from '../components/HeatMap';
+import DigitalTwinMap from '../components/DigitalTwinMap';
 import ShiftPlanner from '../components/ShiftPlanner';
 
 const RISK_COLORS = [
@@ -58,6 +59,7 @@ export default function Predict() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showAllZones, setShowAllZones] = useState(false);
   const [rankingMetric, setRankingMetric] = useState('risk');
+  const [view3d, setView3d] = useState(false);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -680,9 +682,22 @@ export default function Predict() {
       </div>
 
       {/* Heatmap Card */}
-      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Simulated Traffic &amp; Congestion Heatmap</h3>
-        <HeatMap data={heatmap} zoneIntensity={simulatedZoneIntensity} className="h-[280px] sm:h-[350px] md:h-[400px]" />
+      <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-900">Simulated Traffic &amp; Congestion Heatmap</h3>
+          <button
+            onClick={() => setView3d(!view3d)}
+            className="px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200 select-none bg-slate-900 border border-slate-700/80 hover:bg-slate-800 text-amber-400 flex items-center gap-1.5 shadow-lg active:scale-95 hover:border-amber-500/30"
+          >
+            <span>{view3d ? "Switch to 2D Mode" : "Switch to 3D Digital Twin"}</span>
+          </button>
+        </div>
+        
+        {view3d ? (
+          <DigitalTwinMap data={heatmap} zoneIntensity={simulatedZoneIntensity} className="h-[280px] sm:h-[350px] md:h-[400px]" />
+        ) : (
+          <HeatMap data={heatmap} zoneIntensity={simulatedZoneIntensity} className="h-[280px] sm:h-[350px] md:h-[400px]" />
+        )}
       </div>
 
       <ShiftPlanner data={shiftData} />

@@ -37,6 +37,66 @@ BENGALURU_ZONES: dict[str, dict] = {
         "baseline_speed_kmh": 22.0,
         "lane_width_m": 7.0,
     },
+    "Majestic": {
+        "center": [12.9766, 77.5712],
+        "bbox": [12.965, 77.555, 12.985, 77.585],
+        "baseline_speed_kmh": 18.0,
+        "lane_width_m": 6.5,
+    },
+    "Hebbal": {
+        "center": [13.0358, 77.5978],
+        "bbox": [13.020, 77.580, 13.050, 77.615],
+        "baseline_speed_kmh": 26.0,
+        "lane_width_m": 7.0,
+    },
+    "Electronic City": {
+        "center": [12.8452, 77.6602],
+        "bbox": [12.830, 77.640, 12.860, 77.680],
+        "baseline_speed_kmh": 28.0,
+        "lane_width_m": 7.5,
+    },
+    "Jayanagar": {
+        "center": [12.9284, 77.5824],
+        "bbox": [12.915, 77.570, 12.940, 77.595],
+        "baseline_speed_kmh": 22.0,
+        "lane_width_m": 6.0,
+    },
+    "Yelahanka": {
+        "center": [13.0978, 77.5862],
+        "bbox": [13.080, 77.570, 13.115, 77.605],
+        "baseline_speed_kmh": 24.0,
+        "lane_width_m": 6.5,
+    },
+    "Marathahalli": {
+        "center": [12.9592, 77.6974],
+        "bbox": [12.945, 77.680, 12.975, 77.715],
+        "baseline_speed_kmh": 20.0,
+        "lane_width_m": 7.0,
+    },
+    "Malleshwaram": {
+        "center": [12.9984, 77.5720],
+        "bbox": [12.985, 77.560, 13.010, 77.585],
+        "baseline_speed_kmh": 20.0,
+        "lane_width_m": 6.0,
+    },
+    "Banashankari": {
+        "center": [12.9156, 77.5736],
+        "bbox": [12.900, 77.560, 12.930, 77.590],
+        "baseline_speed_kmh": 22.0,
+        "lane_width_m": 6.5,
+    },
+    "BTM Layout": {
+        "center": [12.9166, 77.6083],
+        "bbox": [12.905, 77.595, 12.928, 77.620],
+        "baseline_speed_kmh": 22.0,
+        "lane_width_m": 6.0,
+    },
+    "Rajajinagar": {
+        "center": [12.9892, 77.5562],
+        "bbox": [12.975, 77.540, 13.000, 77.570],
+        "baseline_speed_kmh": 20.0,
+        "lane_width_m": 6.5,
+    },
 }
 
 PEAK_HOURS: list[tuple[int, int]] = [

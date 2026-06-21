@@ -14,6 +14,8 @@ services:
       context: ./backend
     ports:
       - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - ./backend/.env.docker
     environment:
@@ -32,6 +34,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_USE_TLS: ${SMTP_USE_TLS:-}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-}
+      GEMINI_PROXY: ${GEMINI_PROXY:-}
     volumes:
       - .:/app/root
       - ./backend/data:/app/data

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import time
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -36,10 +37,28 @@ def get_genai_client(api_key: str):
                 status_code=500, detail="google-genai package is not installed."
             )
         from google.genai import types
+
+        # If GEMINI_PROXY is set, temporarily apply it as HTTPS_PROXY
+        # so only the genai httpx transport uses the proxy.
+        # Other APIs (TomTom, Weather, SMTP) are NOT affected.
+        gemini_proxy = os.environ.get("GEMINI_PROXY", "")
+        old_https_proxy = os.environ.get("HTTPS_PROXY")
+        if gemini_proxy:
+            os.environ["HTTPS_PROXY"] = gemini_proxy
+            logger.info(f"Routing Gemini API through proxy: {gemini_proxy}")
+
         client = genai.Client(
             api_key=api_key,
             http_options=types.HttpOptions(timeout=15000)
         )
+
+        # Restore original HTTPS_PROXY so other APIs are unaffected
+        if gemini_proxy:
+            if old_https_proxy is not None:
+                os.environ["HTTPS_PROXY"] = old_https_proxy
+            else:
+                os.environ.pop("HTTPS_PROXY", None)
+
         try:
             available_models = [m.name for m in client.models.list()]
             available_models_clean = [m.replace("models/", "") for m in available_models]
@@ -53,21 +72,23 @@ def get_genai_client(api_key: str):
             _genai_client = client
         except Exception as e:
             err_msg = str(e).lower()
-            # Detect invalid / expired API key errors and fail fast
+            # Detect invalid / expired API key or geo-restriction errors
             if (
                 "api key not valid" in err_msg or
                 "api_key_invalid" in err_msg or
                 "invalid_argument" in err_msg or
+                "not supported for the api use" in err_msg or
+                "failed_precondition" in err_msg or
                 getattr(e, "code", None) == 400 or
                 getattr(e, "status_code", None) == 400
             ):
-                logger.error(f"Gemini API key is invalid or expired: {e}")
+                logger.error(f"Gemini API key is invalid, expired, or geo-blocked: {e}")
                 raise HTTPException(
                     status_code=500,
                     detail=(
-                        "Gemini API key is invalid or expired. "
-                        "Please verify the GEMINI_API_KEY in your .env file and restart the server. "
-                        f"Original error: {e}"
+                        "Gemini API Error: " + str(e) + ". "
+                        "If this is a location error, set GEMINI_PROXY=socks5://host.docker.internal:40000 "
+                        "in your .env and install Cloudflare WARP on the host."
                     ),
                 )
             # Non-auth errors (e.g. network timeout) — cache client anyway and try later

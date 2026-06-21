@@ -36,6 +36,14 @@ class Settings(BaseSettings):
     google_maps_api_key: str = ""
     tomtom_api_key: str = ""
 
+    # SMTP Settings
+    smtp_host: str = ""
+    smtp_port: int = 587
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_use_tls: bool = True
+    smtp_from_email: str = "noreply@parksense.ai"
+
     jwt_secret: str = "change-me-in-production-use-long-random-string"
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = 60 * 24 * 7

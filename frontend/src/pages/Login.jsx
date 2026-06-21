@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ChatBot from '../components/ChatBot';
+import { api } from '../api/client';
 
 export default function Login() {
   const { user, login } = useAuth();
@@ -15,6 +16,65 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Password reset wizard state variables
+  const [step, setStep] = useState('login'); // 'login' | 'forgot-password' | 'reset-password'
+  const [resetEmail, setResetEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState('');
+
+  // Handle forgot password OTP generation
+  async function handleForgotPasswordSubmit(e) {
+    e.preventDefault();
+    setResetError('');
+    setStatusMessage('');
+    setResetLoading(true);
+    try {
+      await api.forgotPassword({ email: resetEmail });
+      setStatusMessage('Verification OTP sent successfully!');
+      setTimeout(() => {
+        setStep('reset-password');
+        setStatusMessage('');
+      }, 1500);
+    } catch (err) {
+      setResetError(err.response?.data?.detail || 'Failed to send OTP. Please check your email.');
+    } finally {
+      setResetLoading(false);
+    }
+  }
+
+  // Handle actual password reset
+  async function handleResetPasswordSubmit(e) {
+    e.preventDefault();
+    setResetError('');
+    setStatusMessage('');
+    setResetLoading(true);
+    try {
+      await api.resetPassword({
+        email: resetEmail,
+        otp_code: otpCode,
+        new_password: newPassword,
+      });
+      setStatusMessage('Password reset successfully! Returning to Login...');
+      setTimeout(() => {
+        setStep('login');
+        setEmail(resetEmail); // prefill reset email for user convenience
+        setPassword('');
+        setOtpCode('');
+        setNewPassword('');
+        setResetError('');
+        setStatusMessage('');
+      }, 2000);
+    } catch (err) {
+      setResetError(err.response?.data?.detail || 'Failed to reset password. Please check your OTP.');
+    } finally {
+      setResetLoading(false);
+    }
+  }
 
 
 
@@ -95,7 +155,6 @@ export default function Login() {
                 <h1 className="text-xl font-black tracking-tight text-white select-none">मार्ग Sense</h1>
               </div>
               
-              {/* Live Badge */}
               <div className="flex items-center gap-1.5 rounded-full bg-white/5 px-2.5 py-0.5 border border-white/10">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
@@ -105,126 +164,259 @@ export default function Login() {
               </div>
             </div>
 
-            {/* Mode Selector Segmented Toggle */}
-            <div className="mb-3.5 flex rounded-2xl bg-white/[0.04] p-1 border border-white/10">
-              <button
-                type="button"
-                onClick={() => setMode('user')}
-                className={`flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                  mode === 'user' 
-                    ? 'border border-white/25 text-white bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm' 
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Citizen
-              </button>
-              <button
-                type="button"
-                onClick={() => setMode('officer')}
-                className={`flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
-                  mode === 'officer' 
-                    ? 'border border-white/25 text-white bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm' 
-                    : 'text-white/60 hover:text-white'
-                }`}
-              >
-                Officer
-              </button>
-            </div>
-
-            {/* Subtext description */}
-            <p className="mb-3.5 text-center text-xs text-white/70 font-semibold select-none leading-relaxed px-1">
-              {mode === 'user' 
-                ? 'Plan your commute — see congestion and parking hotspots before you travel.'
-                : 'Command center access for Bengaluru traffic enforcement.'}
-            </p>
-
-            {/* Login Form */}
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 select-none">Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300 placeholder-white/30"
-                  placeholder={mode === 'officer' ? 'officer@margsense.demo' : 'you@email.com'}
-                />
-              </div>
-              
-              <div>
-                <div className="flex justify-between items-center">
-                  <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 select-none">Password</label>
-                  <button 
-                    type="button" 
-                    className="text-[9px] font-bold text-white/50 hover:text-white hover:underline cursor-pointer bg-transparent border-none"
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                <div className="relative mt-1">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 pr-11 text-sm text-white outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300"
-                  />
-                  {/* Visibility eye toggle */}
+            {step === 'login' && (
+              <>
+                {/* Mode Selector Segmented Toggle */}
+                <div className="mb-3.5 flex rounded-2xl bg-white/[0.04] p-1 border border-white/10">
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute inset-y-0 right-0 flex items-center pr-3.5 cursor-pointer"
+                    onClick={() => setMode('user')}
+                    className={`flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                      mode === 'user' 
+                        ? 'border border-white/25 text-white bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm' 
+                        : 'text-white/60 hover:text-white'
+                    }`}
                   >
-                    {showPassword ? (
-                      <svg className="h-4.5 w-4.5 text-white/45 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
-                      </svg>
-                    ) : (
-                      <svg className="h-4.5 w-4.5 text-white/45 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                    )}
+                    Citizen
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMode('officer')}
+                    className={`flex-1 rounded-xl py-2 text-xs font-black uppercase tracking-wider transition-all duration-300 cursor-pointer ${
+                      mode === 'officer' 
+                        ? 'border border-white/25 text-white bg-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-sm' 
+                        : 'text-white/60 hover:text-white'
+                    }`}
+                  >
+                    Officer
                   </button>
                 </div>
-              </div>
 
-              {error && <p className="text-[11px] font-bold text-command-danger">{error}</p>}
-              
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full rounded-xl bg-white py-2.5 font-bold uppercase text-[11px] tracking-widest text-black hover:bg-white/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 cursor-pointer shadow-[0_8px_24px_rgba(255,255,255,0.15)] mt-2"
-              >
-                {loading 
-                  ? 'Signing in...' 
-                  : mode === 'officer' 
-                    ? 'Sign In as Officer' 
-                    : 'Sign In as Citizen'}
-              </button>
-            </form>
+                {/* Subtext description */}
+                <p className="mb-3.5 text-center text-xs text-white/70 font-semibold select-none leading-relaxed px-1">
+                  {mode === 'user' 
+                    ? 'Plan your commute — see congestion and parking hotspots before you travel.'
+                    : 'Command center access for Bengaluru traffic enforcement.'}
+                </p>
 
+                {/* Login Form */}
+                <form onSubmit={handleSubmit} className="space-y-3">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 select-none">Email</label>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300 placeholder-white/30"
+                      placeholder={mode === 'officer' ? 'officer@margsense.demo' : 'you@email.com'}
+                    />
+                  </div>
+                  
+                  <div>
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 select-none">Password</label>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setStep('forgot-password');
+                          setResetEmail(email); // prefill reset email if already typed
+                          setError('');
+                          setResetError('');
+                          setStatusMessage('');
+                        }}
+                        className="text-[9px] font-bold text-white/50 hover:text-white hover:underline cursor-pointer bg-transparent border-none"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                    <div className="relative mt-1">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 pr-11 text-sm text-white outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300"
+                      />
+                      {/* Visibility eye toggle */}
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3.5 cursor-pointer"
+                      >
+                        {showPassword ? (
+                          <svg className="h-4.5 w-4.5 text-white/45 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                          </svg>
+                        ) : (
+                          <svg className="h-4.5 w-4.5 text-white/45 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
 
+                  {error && <p className="text-[11px] font-bold text-command-danger">{error}</p>}
+                  
+                  {/* Submit Button */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full rounded-xl bg-white py-2.5 font-bold uppercase text-[11px] tracking-widest text-black hover:bg-white/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 cursor-pointer shadow-[0_8px_24px_rgba(255,255,255,0.15)] mt-2"
+                  >
+                    {loading 
+                      ? 'Signing in...' 
+                      : mode === 'officer' 
+                        ? 'Sign In as Officer' 
+                        : 'Sign In as Citizen'}
+                  </button>
+                </form>
 
-            {/* Demo Credentials Filler */}
-            <button
-              type="button"
-              onClick={fillDemo}
-              className="mt-3 w-full text-center text-xs text-white/60 hover:text-white hover:underline cursor-pointer bg-transparent border-none outline-none select-none font-bold transition-colors duration-200"
-            >
-              Use demo {mode} credentials
-            </button>
+                {/* Demo Credentials Filler */}
+                <button
+                  type="button"
+                  onClick={fillDemo}
+                  className="mt-3 w-full text-center text-xs text-white/60 hover:text-white hover:underline cursor-pointer bg-transparent border-none outline-none select-none font-bold transition-colors duration-200"
+                >
+                  Use demo {mode} credentials
+                </button>
 
-            {/* Citizen register link */}
-            {mode === 'user' && (
-              <p className="mt-3 text-center text-xs text-white/55 select-none">
-                New here?{' '}
-                <Link to="/register" className="text-white hover:underline font-bold transition-colors duration-200">
-                  Create account
-                </Link>
-              </p>
+                {/* Citizen register link */}
+                {mode === 'user' && (
+                  <p className="mt-3 text-center text-xs text-white/55 select-none">
+                    New here?{' '}
+                    <Link to="/register" className="text-white hover:underline font-bold transition-colors duration-200">
+                      Create account
+                    </Link>
+                  </p>
+                )}
+              </>
+            )}
+
+            {step === 'forgot-password' && (
+              <>
+                <h2 className="text-center text-lg font-black tracking-tight text-white mb-1 select-none">Forgot password</h2>
+                <p className="mb-4 text-center text-xs text-white/70 font-semibold select-none leading-relaxed px-1">
+                  Enter your email address and we'll send you a 6-digit OTP code to reset your password.
+                </p>
+
+                <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 select-none">Email Address</label>
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      required
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300 placeholder-white/30"
+                      placeholder="you@email.com"
+                    />
+                  </div>
+
+                  {resetError && <p className="text-[11px] font-bold text-command-danger">{resetError}</p>}
+                  {statusMessage && <p className="text-[11px] font-bold text-emerald-400">{statusMessage}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="w-full rounded-xl bg-white py-2.5 font-bold uppercase text-[11px] tracking-widest text-black hover:bg-white/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 cursor-pointer shadow-[0_8px_24px_rgba(255,255,255,0.15)] mt-2"
+                  >
+                    {resetLoading ? 'Sending OTP...' : 'Send OTP Code'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('login');
+                      setResetError('');
+                      setStatusMessage('');
+                    }}
+                    className="w-full text-center text-xs text-white/60 hover:text-white hover:underline cursor-pointer bg-transparent border-none outline-none font-bold transition-colors"
+                  >
+                    Back to Sign In
+                  </button>
+                </form>
+              </>
+            )}
+
+            {step === 'reset-password' && (
+              <>
+                <h2 className="text-center text-lg font-black tracking-tight text-white mb-1 select-none">Reset password</h2>
+                <p className="mb-4 text-center text-xs text-white/70 font-semibold select-none leading-relaxed px-1">
+                  An OTP was sent to <span className="text-white font-bold">{resetEmail}</span>. Enter the OTP code and your new password.
+                </p>
+
+                <form onSubmit={handleResetPasswordSubmit} className="space-y-3.5">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 select-none">6-Digit OTP Code</label>
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                      required
+                      className="mt-1 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white tracking-widest text-center font-bold outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300 placeholder-white/30"
+                      placeholder="000000"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 select-none">New Password</label>
+                    <div className="relative mt-1">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={6}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 pr-11 text-sm text-white outline-none focus:border-white/40 focus:ring-2 focus:ring-white/10 transition-all duration-300"
+                        placeholder="••••••••"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3.5 cursor-pointer"
+                      >
+                        {showNewPassword ? (
+                          <svg className="h-4.5 w-4.5 text-white/45 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" />
+                          </svg>
+                        ) : (
+                          <svg className="h-4.5 w-4.5 text-white/45 hover:text-white transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {resetError && <p className="text-[11px] font-bold text-command-danger">{resetError}</p>}
+                  {statusMessage && <p className="text-[11px] font-bold text-emerald-400">{statusMessage}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={resetLoading}
+                    className="w-full rounded-xl bg-white py-2.5 font-bold uppercase text-[11px] tracking-widest text-black hover:bg-white/90 active:scale-[0.98] transition-all duration-200 disabled:opacity-50 cursor-pointer shadow-[0_8px_24px_rgba(255,255,255,0.15)] mt-2"
+                  >
+                    {resetLoading ? 'Resetting...' : 'Reset Password'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setStep('forgot-password');
+                      setResetError('');
+                      setStatusMessage('');
+                    }}
+                    className="w-full text-center text-xs text-white/60 hover:text-white hover:underline cursor-pointer bg-transparent border-none outline-none font-bold transition-colors"
+                  >
+                    Resend OTP Code
+                  </button>
+                </form>
+              </>
             )}
 
           </div>

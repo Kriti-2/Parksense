@@ -4,7 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import get_current_user
-from app.auth.schemas import TokenResponse, UserLogin, UserOut, UserRegister, LoginRequest
+from app.auth.schemas import (
+    TokenResponse,
+    UserLogin,
+    UserOut,
+    UserRegister,
+    LoginRequest,
+    ForgotPasswordRequest,
+    VerifyOTPRequest,
+    ResetPasswordRequest,
+)
 from app.auth.security import create_access_token, hash_password, verify_password
 from app.config import get_settings
 from app.database import get_db
@@ -98,6 +107,94 @@ def ingest_token(request: Request, body: LoginRequest):
 @router.get("/me", response_model=UserOut)
 def me(user: User = Depends(get_current_user)):
     return user
+
+
+@router.post("/forgot-password")
+@limiter.limit(lambda: get_settings().rate_limit_auth)
+def forgot_password(
+    request: Request, payload: ForgotPasswordRequest, db: Session = Depends(get_db)
+):
+    """Generate and send a password reset OTP code to the user's email."""
+    import random
+    from datetime import datetime, timedelta
+    from app.services.email_service import send_otp_email
+
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Email not found"
+        )
+
+    # Generate 6-digit numeric OTP
+    otp = f"{random.randint(100000, 999999)}"
+    user.otp_code = otp
+    user.otp_expires_at = datetime.utcnow() + timedelta(minutes=10)
+    db.commit()
+
+    # Dispatch email (fallback to log/file if not configured)
+    send_otp_email(user.email, otp)
+
+    return {"message": "OTP code has been sent to your email"}
+
+
+@router.post("/verify-otp")
+@limiter.limit(lambda: get_settings().rate_limit_auth)
+def verify_otp(
+    request: Request, payload: VerifyOTPRequest, db: Session = Depends(get_db)
+):
+    """Verify that the OTP code is valid and not expired."""
+    from datetime import datetime
+
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    if not user.otp_code or user.otp_code != payload.otp_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP code"
+        )
+
+    if not user.otp_expires_at or user.otp_expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="OTP code has expired"
+        )
+
+    return {"message": "OTP code is valid"}
+
+
+@router.post("/reset-password")
+@limiter.limit(lambda: get_settings().rate_limit_auth)
+def reset_password(
+    request: Request, payload: ResetPasswordRequest, db: Session = Depends(get_db)
+):
+    """Verify OTP and reset the user's password."""
+    from datetime import datetime
+
+    user = db.query(User).filter(User.email == payload.email.lower()).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    if not user.otp_code or user.otp_code != payload.otp_code:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid OTP code"
+        )
+
+    if not user.otp_expires_at or user.otp_expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="OTP code has expired"
+        )
+
+    # Update password and clear OTP
+    user.hashed_password = hash_password(payload.new_password)
+    user.otp_code = None
+    user.otp_expires_at = None
+    db.commit()
+
+    return {"message": "Password has been reset successfully"}
 
 
 

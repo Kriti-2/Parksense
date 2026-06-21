@@ -19,6 +19,9 @@ export function setAuthToken(token) {
 export const api = {
   login: (data) => client.post('/auth/login', data),
   register: (data) => client.post('/auth/register', data),
+  forgotPassword: (data) => client.post('/auth/forgot-password', data),
+  verifyOTP: (data) => client.post('/auth/verify-otp', data),
+  resetPassword: (data) => client.post('/auth/reset-password', data),
   getMe: () => client.get('/auth/me'),
   getCongestionPreview: () => client.get('/public/congestion-preview'),
   getNotices: () => client.get('/public/notices'),

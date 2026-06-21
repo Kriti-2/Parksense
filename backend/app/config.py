@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     weather_city: str = "Bengaluru,IN"
     google_maps_api_key: str = ""
     tomtom_api_key: str = ""
+    mapbox_access_token: str = ""
 
     # SMTP Settings
     smtp_host: str = ""

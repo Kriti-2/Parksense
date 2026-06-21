@@ -8,6 +8,7 @@ import { useTranslation } from '../context/LanguageContext';
 import PageLoader from '../components/PageLoader';
 
 const HeatMap = lazy(() => import('../components/HeatMap'));
+const DigitalTwinMap = lazy(() => import('../components/DigitalTwinMap'));
 const WeatherBanner = lazy(() => import('../components/WeatherBanner'));
 
 const SLIDES = [
@@ -245,6 +246,8 @@ export default function Homepage() {
   const [lastTick, setLastTick] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mapView, setMapView] = useState('2d');
+  const [trafficData, setTrafficData] = useState(null);
 
   const [violationsLastHourHistory, setViolationsLastHourHistory] = useState([12, 16, 14, 19, 15, 23, 18, 20]);
   const [activeHotspotsHistory, setActiveHotspotsHistory] = useState([2, 1, 3, 2, 4, 3, 2, 3]);
@@ -296,14 +299,16 @@ export default function Homepage() {
     setLoading(true);
     try {
       // Fetch all data needed for Live Overview
-      const [an, pr, hm] = await Promise.all([
+      const [an, pr, hm, tr] = await Promise.all([
         api.getAnalytics(),
         api.getPredictions(),
-        api.getHeatmap(1500)
+        api.getHeatmap(1500),
+        api.getTrafficRoutes()
       ]);
       setAnalytics(an.data);
       setPredictions(pr.data);
       setHeatmap(hm.data);
+      setTrafficData(tr.data);
       setLoading(false);
     } catch (err) {
       setError(err.message || 'Failed to load dashboard data');
@@ -471,13 +476,55 @@ export default function Homepage() {
               variant="default"
             />
           </div>
-          <Suspense fallback={
-            <div className="h-[300px] sm:h-[400px] md:h-[450px] animate-pulse bg-command-panel border border-command-border rounded-xl flex items-center justify-center text-xs text-command-muted">
-              Initializing live mapping view...
+          <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Live Traffic & Congestion Monitoring</h3>
+                <p className="text-xs text-gray-400">Real-time visualization of congestion levels and violation hotspots</p>
+              </div>
+              
+              {/* View Mode Toggle */}
+              <div className="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200 shrink-0 self-start sm:self-center">
+                <button
+                  onClick={() => setMapView('2d')}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    mapView === '2d'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-450 hover:text-gray-700'
+                  }`}
+                >
+                  2D Heatmap
+                </button>
+                <button
+                  onClick={() => setMapView('3d')}
+                  className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                    mapView === '3d'
+                      ? 'bg-white text-gray-900 shadow-sm'
+                      : 'text-gray-450 hover:text-gray-700'
+                  }`}
+                >
+                  3D Digital Twin
+                </button>
+              </div>
             </div>
-          }>
-            <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
-          </Suspense>
+
+            <Suspense fallback={
+              <div className="h-[300px] sm:h-[400px] md:h-[450px] animate-pulse bg-command-panel border border-command-border rounded-xl flex items-center justify-center text-xs text-command-muted">
+                Initializing live mapping view...
+              </div>
+            }>
+              {mapView === '2d' ? (
+                <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
+              ) : (
+                <DigitalTwinMap 
+                  zoneIntensity={heatmap?.zone_intensity || {}}
+                  trafficData={trafficData}
+                  violationsData={heatmap?.features || []}
+                  className="h-[300px] sm:h-[400px] md:h-[450px]"
+                />
+              )}
+            </Suspense>
+          </div>
         </div>
       </div>
     </div>

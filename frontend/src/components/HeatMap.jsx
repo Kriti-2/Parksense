@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { MapContainer, TileLayer, CircleMarker, Popup, useMap, LayersControl } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -6,9 +6,10 @@ const BENGALURU_CENTER = [12.9716, 77.5946];
 
 function FitBounds({ features }) {
   const map = useMap();
+  const hasFitRef = useRef(false);
 
   useEffect(() => {
-    if (!features?.length) return;
+    if (!features?.length || hasFitRef.current) return;
     const lats = features.map((f) => f.geometry.coordinates[1]);
     const lons = features.map((f) => f.geometry.coordinates[0]);
     const bounds = [
@@ -16,6 +17,7 @@ function FitBounds({ features }) {
       [Math.max(...lats), Math.max(...lons)],
     ];
     map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+    hasFitRef.current = true;
   }, [features, map]);
 
   return null;

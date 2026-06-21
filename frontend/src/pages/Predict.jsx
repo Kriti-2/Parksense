@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo, lazy, Suspense } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import HeatMap from '../components/HeatMap';
+const DigitalTwinMap = lazy(() => import('../components/DigitalTwinMap'));
 import ShiftPlanner from '../components/ShiftPlanner';
 
 const RISK_COLORS = [
@@ -58,6 +59,8 @@ export default function Predict() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showAllZones, setShowAllZones] = useState(false);
   const [rankingMetric, setRankingMetric] = useState('risk');
+  const [mapView, setMapView] = useState('2d');
+  const [trafficData, setTrafficData] = useState(null);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -82,16 +85,18 @@ export default function Predict() {
 
   useEffect(() => {
     async function load() {
-      const [pr, sh, hm, st] = await Promise.all([
+      const [pr, sh, hm, st, tr] = await Promise.all([
         api.getPredictions(),
         api.getShiftPlanner(),
         api.getHeatmap(5000),
         api.getShortTermPredictions(),
+        api.getTrafficRoutes(),
       ]);
       setPredictions(pr.data);
       setShiftData(sh.data);
       setHeatmap(hm.data);
       setShortTermPredictions(st.data);
+      setTrafficData(tr.data);
       setLoading(false);
     }
     load();
@@ -681,8 +686,53 @@ export default function Predict() {
 
       {/* Heatmap Card */}
       <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4">
-        <h3 className="text-lg font-bold text-gray-900">Simulated Traffic &amp; Congestion Heatmap</h3>
-        <HeatMap data={heatmap} zoneIntensity={simulatedZoneIntensity} className="h-[280px] sm:h-[350px] md:h-[400px]" />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Simulated Traffic &amp; Congestion Heatmap</h3>
+            <p className="text-xs text-gray-400">Simulated congestion levels based on prediction criteria</p>
+          </div>
+          
+          {/* View Mode Toggle */}
+          <div className="flex bg-gray-100 rounded-lg p-0.5 border border-gray-200 shrink-0 self-start sm:self-center">
+            <button
+              onClick={() => setMapView('2d')}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                mapView === '2d'
+                  ? 'bg-white text-gray-900 shadow-sm'
+                  : 'text-gray-450 hover:text-gray-700'
+              }`}
+            >
+              2D Heatmap
+            </button>
+            <button
+              onClick={() => setMapView('3d')}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                mapView === '3d'
+                  ? 'bg-white text-gray-950 shadow-sm'
+                  : 'text-gray-450 hover:text-gray-700'
+              }`}
+            >
+              3D Digital Twin
+            </button>
+          </div>
+        </div>
+        
+        <Suspense fallback={
+          <div className="h-[280px] sm:h-[350px] md:h-[400px] animate-pulse bg-command-panel border border-command-border rounded-xl flex items-center justify-center text-xs text-command-muted">
+            Initializing mapping view...
+          </div>
+        }>
+          {mapView === '2d' ? (
+            <HeatMap data={heatmap} zoneIntensity={simulatedZoneIntensity} className="h-[280px] sm:h-[350px] md:h-[400px]" />
+          ) : (
+            <DigitalTwinMap 
+              zoneIntensity={simulatedZoneIntensity}
+              trafficData={trafficData}
+              violationsData={heatmap?.features || []}
+              className="h-[280px] sm:h-[350px] md:h-[400px]"
+            />
+          )}
+        </Suspense>
       </div>
 
       <ShiftPlanner data={shiftData} />

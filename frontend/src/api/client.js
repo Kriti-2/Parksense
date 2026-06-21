@@ -25,6 +25,7 @@ export const api = {
   getMe: () => client.get('/auth/me'),
   getCongestionPreview: () => client.get('/public/congestion-preview'),
   getNotices: () => client.get('/public/notices'),
+  getTrafficRoutes: () => client.get('/public/traffic-routes'),
   getHeatmap: (limit = 2000) => client.get('/heatmap', { params: { limit } }),
   getAnalytics: () => client.get('/analytics'),
   getPredictions: () => client.get('/predictions'),

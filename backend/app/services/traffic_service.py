@@ -110,17 +110,31 @@ class TrafficService:
         speeds = {}
         ref_hour = datetime.now(timezone.utc).hour
 
+        # Calculate counts per zone to perform min-max scaling
+        zone_counts = {}
+        if recent is not None and not recent.empty and "zone" in recent.columns:
+            for z in BENGALURU_ZONES:
+                zone_counts[z] = len(recent[recent["zone"] == z])
+            min_count = min(zone_counts.values()) if zone_counts else 0
+            max_count = max(zone_counts.values()) if zone_counts else 1
+            count_range = max_count - min_count if max_count - min_count > 0 else 1
+        else:
+            min_count = 0
+            max_count = 1
+            count_range = 1
+
         for zone, meta in BENGALURU_ZONES.items():
             baseline = meta["baseline_speed_kmh"]
             if recent is not None and not recent.empty and "zone" in recent.columns:
-                zone_count = len(recent[recent["zone"] == zone])
-                max_count = max(len(recent[recent["zone"] == z]) for z in BENGALURU_ZONES) or 1
-                density_factor = zone_count / max_count
+                zone_count = zone_counts.get(zone, 0)
+                # Normalize between 0 and 1
+                density_factor = (zone_count - min_count) / count_range
             else:
                 density_factor = 0.4
 
-            peak_penalty = 0.25 if any(s <= ref_hour < e for s, e in [(8, 11), (17, 21)]) else 0.0
-            drop = min(0.75, density_factor * 0.5 + peak_penalty)
+            # Peak hour speed drop penalty
+            peak_penalty = 0.15 if any(s <= ref_hour < e for s, e in [(8, 11), (17, 21)]) else 0.0
+            drop = min(0.65, density_factor * 0.35 + peak_penalty)
             speeds[zone] = round(baseline * (1 - drop), 2)
 
         return speeds

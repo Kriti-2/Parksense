@@ -304,3 +304,149 @@ async def translate_text(payload: TranslationRequest):
         logging.getLogger(__name__).error(f"Error in translate endpoint: {e}")
         return {"translated_text": text}
 
+
+@router.get("/traffic-routes")
+def get_traffic_routes():
+    """
+    Get 3D traffic route segments for Bengaluru, colored by congestion.
+    """
+    from app.services.traffic_service import TrafficService
+    from app.services.realtime_engine import get_realtime_engine
+    
+    engine = get_realtime_engine()
+    recent = engine.recent_window(hours=24)
+    traffic = TrafficService()
+    speeds = traffic.get_zone_speeds(recent)
+    
+    # Define our connected road network
+    roads = [
+        ("Silk Board", "Koramangala", [
+            [12.9177, 77.6225], [12.9240, 77.6235], [12.9300, 77.6240], [12.9352, 77.6245]
+        ]),
+        ("Koramangala", "HSR Layout", [
+            [12.9352, 77.6245], [12.9340, 77.6310], [12.9300, 77.6345], 
+            [12.9230, 77.6360], [12.9170, 77.6410], [12.9116, 77.6473]
+        ]),
+        ("Koramangala", "Indiranagar", [
+            [12.9352, 77.6245], [12.9390, 77.6275], [12.9430, 77.6310], 
+            [12.9485, 77.6340], [12.9535, 77.6375], [12.9565, 77.6390], 
+            [12.9605, 77.6395], [12.9645, 77.6398], [12.9715, 77.6402], 
+            [12.9784, 77.6408]
+        ]),
+        ("Koramangala", "BTM Layout", [
+            [12.9352, 77.6245], [12.9330, 77.6185], [12.9295, 77.6175], 
+            [12.9250, 77.6150], [12.9210, 77.6120], [12.9166, 77.6083]
+        ]),
+        ("BTM Layout", "Silk Board", [
+            [12.9166, 77.6083], [12.9158, 77.6125], [12.9162, 77.6175], 
+            [12.9170, 77.6200], [12.9177, 77.6225]
+        ]),
+        ("MG Road", "Indiranagar", [
+            [12.9750, 77.6063], [12.9740, 77.6130], [12.9748, 77.6185], 
+            [12.9760, 77.6220], [12.9780, 77.6280], [12.9790, 77.6335], 
+            [12.9785, 77.6375], [12.9784, 77.6408]
+        ]),
+        ("Majestic", "Malleshwaram", [
+            [12.9766, 77.5712], [12.9810, 77.5710], [12.9845, 77.5708], 
+            [12.9880, 77.5715], [12.9925, 77.5718], [12.9984, 77.5720]
+        ]),
+        ("Malleshwaram", "Hebbal", [
+            [12.9984, 77.5720], [13.0035, 77.5745], [13.0080, 77.5780], 
+            [13.0135, 77.5815], [13.0150, 77.5850], [13.0230, 77.5910], 
+            [13.0295, 77.5950], [13.0358, 77.5978]
+        ]),
+        ("Hebbal", "Yelahanka", [
+            [13.0358, 77.5978], [13.0450, 77.5995], [13.0560, 77.5985], 
+            [13.0650, 77.5920], [13.0760, 77.5895], [13.0880, 77.5875], 
+            [13.0978, 77.5862]
+        ]),
+        ("HSR Layout", "Electronic City", [
+            [12.9116, 77.6473], [12.9060, 77.6515], [12.8980, 77.6550], 
+            [12.8910, 77.6580], [12.8780, 77.6540], [12.8680, 77.6570], 
+            [12.8550, 77.6590], [12.8452, 77.6602]
+        ]),
+        ("Indiranagar", "Marathahalli", [
+            [12.9784, 77.6408], [12.9715, 77.6402], [12.9650, 77.6420], 
+            [12.9595, 77.6455], [12.9575, 77.6510], [12.9570, 77.6570], 
+            [12.9590, 77.6640], [12.9610, 77.6750], [12.9592, 77.6974]
+        ]),
+        ("Marathahalli", "Whitefield", [
+            [12.9592, 77.6974], [12.9605, 77.7050], [12.9620, 77.7120], 
+            [12.9650, 77.7200], [12.9680, 77.7290], [12.9660, 77.7380], 
+            [12.9675, 77.7440], [12.9698, 77.7500]
+        ]),
+        ("Majestic", "Rajajinagar", [
+            [12.9766, 77.5712], [12.9750, 77.5645], [12.9775, 77.5585], 
+            [12.9830, 77.5640], [12.9870, 77.5610], [12.9892, 77.5562]
+        ]),
+        ("Jayanagar", "Banashankari", [
+            [12.9284, 77.5824], [12.9260, 77.5750], [12.9220, 77.5780], 
+            [12.9180, 77.5750], [12.9156, 77.5736]
+        ]),
+        ("Jayanagar", "BTM Layout", [
+            [12.9284, 77.5824], [12.9275, 77.5910], [12.9240, 77.5940], 
+            [12.9220, 77.5950], [12.9180, 77.6010], [12.9166, 77.6083]
+        ]),
+    ]
+    
+    features = []
+    for idx, (z1, z2, waypoints) in enumerate(roads):
+        # Calculate speed drops in connected zones
+        meta1 = BENGALURU_ZONES.get(z1, {"baseline_speed_kmh": 20})
+        meta2 = BENGALURU_ZONES.get(z2, {"baseline_speed_kmh": 20})
+        
+        speed1 = speeds.get(z1, meta1["baseline_speed_kmh"] * 0.7)
+        speed2 = speeds.get(z2, meta2["baseline_speed_kmh"] * 0.7)
+        
+        drop1 = max(0, (meta1["baseline_speed_kmh"] - speed1) / meta1["baseline_speed_kmh"] * 100)
+        drop2 = max(0, (meta2["baseline_speed_kmh"] - speed2) / meta2["baseline_speed_kmh"] * 100)
+        
+        avg_drop = (drop1 + drop2) / 2
+        avg_speed = (speed1 + speed2) / 2
+        
+        if avg_drop >= 50:
+            congestion = "high"
+            color = "#FF3B30"  # Vibrant Neon Red
+        elif avg_drop >= 25:
+            congestion = "medium"
+            color = "#FF9500"  # Vibrant Neon Orange
+        else:
+            congestion = "low"
+            color = "#34C759"  # Vibrant Neon Green
+            
+        # Flip to [lon, lat] for Mapbox GeoJSON spec and interpolate points to increase waypoint resolution
+        coords = []
+        for i in range(len(waypoints) - 1):
+            p1 = waypoints[i]
+            p2 = waypoints[i + 1]
+            coords.append([p1[1], p1[0]])  # Flip to [lon, lat]
+            # Add 2 intermediate points between each pair to smooth out the road curves
+            for step in range(1, 3):
+                frac = step / 3
+                lat = p1[0] + (p2[0] - p1[0]) * frac
+                lng = p1[1] + (p2[1] - p1[1]) * frac
+                coords.append([lng, lat])
+        if waypoints:
+            coords.append([waypoints[-1][1], waypoints[-1][0]])
+        
+        features.append({
+            "type": "Feature",
+            "id": idx + 1,
+            "geometry": {
+                "type": "LineString",
+                "coordinates": coords
+            },
+            "properties": {
+                "route_name": f"{z1} - {z2}",
+                "congestion_level": congestion,
+                "color": color,
+                "current_speed_kmh": round(avg_speed, 1),
+                "speed_drop_pct": round(avg_drop, 1)
+            }
+        })
+        
+    return {
+        "type": "FeatureCollection",
+        "features": features
+    }
+

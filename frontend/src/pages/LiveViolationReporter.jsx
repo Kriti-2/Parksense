@@ -128,6 +128,10 @@ export default function LiveViolationReporter() {
 
   // Geolocation API to get browser coordinates
   function handleUseGPS() {
+    if (window.isSecureContext === false) {
+      showToast('error', '📍 GPS is blocked on insecure origins. Please access the application via http://localhost:5173 or configure HTTPS.');
+      return;
+    }
     if (!navigator.geolocation) {
       showToast('error', 'Geolocation is not supported by your browser.');
       return;
@@ -144,7 +148,11 @@ export default function LiveViolationReporter() {
       (error) => {
         console.error(error);
         setGpsLoading(false);
-        showToast('error', `GPS Error: ${error.message}. Please allow location access.`);
+        let msg = `GPS Error: ${error.message}. Please allow location access.`;
+        if (window.isSecureContext === false || error.message.toLowerCase().includes('origin') || error.message.toLowerCase().includes('secure')) {
+          msg = '📍 GPS Error: Only secure origins are allowed. Please access the application via http://localhost:5173 or configure HTTPS.';
+        }
+        showToast('error', msg);
       },
       { enableHighAccuracy: true, timeout: 8000 }
     );

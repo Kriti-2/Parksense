@@ -26,9 +26,10 @@ class ChatMessage(BaseModel):
 
 # Global client cache
 _genai_client = None
+_supported_model = "gemini-2.5-flash"  # Default fallback
 
 def get_genai_client(api_key: str):
-    global _genai_client
+    global _genai_client, _supported_model
     if _genai_client is None:
         if genai is None:
             raise HTTPException(
@@ -39,6 +40,17 @@ def get_genai_client(api_key: str):
             api_key=api_key,
             http_options=types.HttpOptions(timeout=15000)
         )
+        try:
+            available_models = [m.name for m in _genai_client.models.list()]
+            available_models_clean = [m.replace("models/", "") for m in available_models]
+            preferred_models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+            for pm in preferred_models:
+                if pm in available_models_clean:
+                    _supported_model = pm
+                    logger.info(f"Selected Gemini model based on API support: {_supported_model}")
+                    break
+        except Exception as e:
+            logger.warning(f"Failed to query available models, defaulting to gemini-2.5-flash: {e}")
     return _genai_client
 
 # TTL Cache for parsed live data (15 seconds)
@@ -238,7 +250,7 @@ async def ask_assistant(request: Request, payload: ChatMessage):
             for attempt in range(max_retries):
                 try:
                     stream = await client.aio.models.generate_content_stream(
-                        model='gemini-2.5-flash',
+                        model=_supported_model,
                         contents=prompt,
                     )
                     break
@@ -275,7 +287,7 @@ async def ask_assistant(request: Request, payload: ChatMessage):
         for attempt in range(max_retries):
             try:
                 response = await client.aio.models.generate_content(
-                    model='gemini-2.5-flash',
+                    model=_supported_model,
                     contents=prompt,
                 )
                 return {"response": response.text}

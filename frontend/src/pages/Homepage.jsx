@@ -8,7 +8,6 @@ import { useTranslation } from '../context/LanguageContext';
 import PageLoader from '../components/PageLoader';
 
 const HeatMap = lazy(() => import('../components/HeatMap'));
-const DigitalTwinMap = lazy(() => import('../components/DigitalTwinMap'));
 const WeatherBanner = lazy(() => import('../components/WeatherBanner'));
 
 const SLIDES = [
@@ -246,7 +245,6 @@ export default function Homepage() {
   const [lastTick, setLastTick] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [view3d, setView3d] = useState(false);
 
   const [violationsLastHourHistory, setViolationsLastHourHistory] = useState([12, 16, 14, 19, 15, 23, 18, 20]);
   const [activeHotspotsHistory, setActiveHotspotsHistory] = useState([2, 1, 3, 2, 4, 3, 2, 3]);
@@ -396,30 +394,12 @@ export default function Homepage() {
               variant="default"
             />
           </div>
-          
-          <div className="flex justify-between items-center bg-command-panel/40 border border-command-border/60 rounded-xl p-4">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-200">Traffic & Violation Map View</h3>
-              <p className="text-[10px] text-slate-400">Switch between 2D heatmap and 3D Digital Twin simulation</p>
-            </div>
-            <button
-              onClick={() => setView3d(!view3d)}
-              className="px-3.5 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-200 select-none bg-slate-900 border border-slate-700/80 hover:bg-slate-800 text-amber-400 flex items-center gap-1.5 shadow-lg active:scale-95 hover:border-amber-500/30"
-            >
-              <span>{view3d ? "Switch to 2D Mode" : "Switch to 3D Digital Twin"}</span>
-            </button>
-          </div>
-
           <Suspense fallback={
             <div className="h-[300px] sm:h-[400px] md:h-[450px] animate-pulse bg-command-panel border border-command-border rounded-xl flex items-center justify-center text-xs text-command-muted">
               Initializing live mapping view...
             </div>
           }>
-            {view3d ? (
-              <DigitalTwinMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
-            ) : (
-              <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
-            )}
+            <HeatMap data={heatmap} zoneIntensity={heatmap?.zone_intensity} className="h-[300px] sm:h-[400px] md:h-[450px]" />
           </Suspense>
         </div>
       </div>

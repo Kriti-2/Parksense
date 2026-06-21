@@ -85,8 +85,16 @@ export default function DigitalTwinMap({ data, zoneIntensity = {}, className = '
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
 
-    // Filter features to get active violation points
-    features.forEach((feature) => {
+    // Filter features to get active violation points (congestion score >= 50) and limit count to prevent map cluttering
+    const activeViolations = features
+      .filter((feature) => {
+        const zone = feature.properties.zone;
+        const score = zoneIntensity[zone]?.congestion_score || 30;
+        return score >= 50;
+      })
+      .slice(0, 50);
+
+    activeViolations.forEach((feature) => {
       const [lon, lat] = feature.geometry.coordinates;
       const zone = feature.properties.zone;
       const score = zoneIntensity[zone]?.congestion_score || 30;

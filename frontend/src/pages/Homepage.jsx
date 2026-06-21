@@ -5,6 +5,7 @@ import { useLiveFeed } from '../hooks/useLiveFeed';
 import { useAuth } from '../context/AuthContext';
 import KPICard from '../components/KPICard';
 import { useTranslation } from '../context/LanguageContext';
+import PageLoader from '../components/PageLoader';
 
 const HeatMap = lazy(() => import('../components/HeatMap'));
 const WeatherBanner = lazy(() => import('../components/WeatherBanner'));
@@ -287,46 +288,44 @@ export default function Homepage() {
 
   const { connected } = useLiveFeed(handleLiveTick);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        // Fetch all data needed for Live Overview
-        const [an, pr, hm] = await Promise.all([
-          api.getAnalytics(),
-          api.getPredictions(),
-          api.getHeatmap(1500)
-        ]);
-        setAnalytics(an.data);
-        setPredictions(pr.data);
-        setHeatmap(hm.data);
-        setLoading(false);
-      } catch (err) {
-        setError(err.message || 'Failed to load data');
-        setLoading(false);
-      }
+  const loadData = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      // Fetch all data needed for Live Overview
+      const [an, pr, hm] = await Promise.all([
+        api.getAnalytics(),
+        api.getPredictions(),
+        api.getHeatmap(1500)
+      ]);
+      setAnalytics(an.data);
+      setPredictions(pr.data);
+      setHeatmap(hm.data);
+      setLoading(false);
+    } catch (err) {
+      setError(err.message || 'Failed to load dashboard data');
+      setLoading(false);
     }
-    load();
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   if (loading) {
     return (
       <div className="animate-fadeIn">
         <HeroSection analytics={null} lastTick={null} connected={false} isOfficer={isOfficer} />
-        <div className="flex h-40 items-center justify-center">
-          <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#5E8599] border-t-transparent" />
-            <p className="mt-3 text-xs text-gray-400">Loading dashboard data...</p>
-          </div>
-        </div>
+        <PageLoader loadingText="Loading dashboard data..." />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center mt-4">
-        <p className="text-red-500">{error}</p>
-        <p className="mt-2 text-sm text-gray-400">Ensure the backend is running on port 8000</p>
+      <div className="animate-fadeIn">
+        <HeroSection analytics={null} lastTick={null} connected={false} isOfficer={isOfficer} />
+        <PageLoader error={error} onRetry={loadData} />
       </div>
     );
   }

@@ -5,6 +5,7 @@ import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import TiltCard from '../components/TiltCard';
 import { useTranslation, TranslatedText } from '../context/LanguageContext';
+import PageLoader from '../components/PageLoader';
 
 const BENGALURU_CENTER = [12.9716, 77.5946];
 const ADVISORY_COLORS = { red: '#A33B3B', orange: '#C0613F', green: '#3D5A4A' };
@@ -126,6 +127,7 @@ export default function UserCongestion() {
   const { t } = useTranslation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Cumulative eco gamification states
   const [totalSavings, setTotalSavings] = useState(1.4); // baseline starting offset (kg)
@@ -139,10 +141,14 @@ export default function UserCongestion() {
   const [routeDetails, setRouteDetails] = useState(null);
 
   const loadPreview = useCallback(() => {
+    setError(null);
     api.getCongestionPreview().then((res) => {
       setData(res.data);
       setLoading(false);
-    }).catch(() => setLoading(false));
+    }).catch((err) => {
+      setError(err.message || 'Failed to load congestion data');
+      setLoading(false);
+    });
   }, []);
 
   const handleLiveTick = useCallback((payload) => {
@@ -227,7 +233,11 @@ export default function UserCongestion() {
   };
 
   if (loading) {
-    return <div className="text-center text-gray-500 py-12"><TranslatedText text="Loading congestion data..." /></div>;
+    return <PageLoader loadingText="Loading congestion data..." />;
+  }
+
+  if (error) {
+    return <PageLoader error={error} onRetry={loadPreview} />;
   }
 
   const zones = data?.zones || [];

@@ -5,6 +5,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import DashboardLayout from './layouts/DashboardLayout';
 import UserLayout from './layouts/UserLayout';
+import PageLoader from './components/PageLoader';
 
 // ── Lazy-load all pages so they're only fetched when visited ─────────────────
 const Homepage = lazy(() => import('./pages/Homepage'));
@@ -18,15 +19,6 @@ const CameraMonitor = lazy(() => import('./pages/CameraMonitor'));
 const Login = lazy(() => import('./pages/Login'));
 const Register = lazy(() => import('./pages/Register'));
 const UserCongestion = lazy(() => import('./pages/UserCongestion'));
-
-// Minimal loading fallback — avoids layout shift
-function PageLoader() {
-  return (
-    <div className="flex h-[60vh] items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#BA5A5A] border-t-transparent" />
-    </div>
-  );
-}
 
 function CorridorsRoute() {
   const { user } = useAuth();

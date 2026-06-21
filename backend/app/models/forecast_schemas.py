@@ -22,4 +22,17 @@ class ForecastResponse(BaseModel):
     top_risk_zones: list[PredictionZone]
     model: str = "Prophet"
     weather_escalation: dict | None = None
+class ShortTermPredictionZone(BaseModel):
+    zone: str
+    current_violations: int
+    predicted_15m: int
+    predicted_30m: int
+    confidence: float
+    latitude: float
+    longitude: float
 
+
+class ShortTermForecastResponse(BaseModel):
+    generated_at: datetime
+    interval_minutes: int = 15
+    predictions: list[ShortTermPredictionZone]

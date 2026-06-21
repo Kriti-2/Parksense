@@ -36,4 +36,9 @@ if settings.celery_enabled:
             "task": "app.tasks.heavy_jobs.prophet_forecast_task",
             "schedule": 24 * 60 * 60,
         },
+        "short-term-forecast-15m": {
+            "task": "app.tasks.heavy_jobs.short_term_forecast_task",
+            "schedule": 15 * 60,
+        },
     }
+

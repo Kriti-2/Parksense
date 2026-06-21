@@ -28,6 +28,7 @@ export const api = {
   getHeatmap: (limit = 2000) => client.get('/heatmap', { params: { limit } }),
   getAnalytics: () => client.get('/analytics'),
   getPredictions: () => client.get('/predictions'),
+  getShortTermPredictions: () => client.get('/predictions/short-term'),
   getSeverityQueue: (limit = 50) => client.get('/severity-queue', { params: { limit } }),
   getRecidivism: () => client.get('/recidivism'),
   getCorridors: () => client.get('/corridors'),

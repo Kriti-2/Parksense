@@ -47,6 +47,8 @@ const formatTime = (h) => {
 
 export default function Predict() {
   const [predictions, setPredictions] = useState(null);
+  const [shortTermPredictions, setShortTermPredictions] = useState(null);
+  const [activeTab, setActiveTab] = useState('24h');
   const [shiftData, setShiftData] = useState(null);
   const [heatmap, setHeatmap] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,14 +82,16 @@ export default function Predict() {
 
   useEffect(() => {
     async function load() {
-      const [pr, sh, hm] = await Promise.all([
+      const [pr, sh, hm, st] = await Promise.all([
         api.getPredictions(),
         api.getShiftPlanner(),
         api.getHeatmap(5000),
+        api.getShortTermPredictions(),
       ]);
       setPredictions(pr.data);
       setShiftData(sh.data);
       setHeatmap(hm.data);
+      setShortTermPredictions(st.data);
       setLoading(false);
     }
     load();
@@ -148,6 +152,20 @@ export default function Predict() {
     return intensity;
   }, [heatmap?.zone_intensity, zones, selectedHour]);
 
+  const shortTermChartData = useMemo(() => {
+    if (!shortTermPredictions?.predictions) return [];
+    return shortTermPredictions.predictions.map((p) => ({
+      zone: p.zone.replace(' Layout', '').replace(' Board', ''),
+      predicted_15m: p.predicted_15m,
+      predicted_30m: p.predicted_30m,
+    })).sort((a, b) => b.predicted_30m - a.predicted_30m);
+  }, [shortTermPredictions]);
+
+  const sortedShortTerm = useMemo(() => {
+    if (!shortTermPredictions?.predictions) return [];
+    return [...shortTermPredictions.predictions].sort((a, b) => b.predicted_30m - a.predicted_30m);
+  }, [shortTermPredictions]);
+
   if (loading) {
     return <div className="text-center text-gray-400">Loading predictions...</div>;
   }
@@ -182,9 +200,13 @@ export default function Predict() {
       {/* Header Info with Stat Pills */}
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>ParkPredict — 24h Forecast</h2>
+          <h2 className="text-xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>
+            {activeTab === '24h' ? 'ParkPredict — 24h Forecast' : 'ParkPredict — Sub-Hourly ML Forecast'}
+          </h2>
           <p className="mt-1 text-xs text-gray-400 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
-            Top 10 high-risk zones powered by Prophet time-series forecasting
+            {activeTab === '24h'
+              ? 'Top 10 high-risk zones powered by Prophet time-series forecasting'
+              : 'Real-time short-term predictions powered by RandomForest ML'}
           </p>
         </div>
         
@@ -241,232 +263,420 @@ export default function Predict() {
         </div>
       </div>
 
-      {/* Simulation Timeline */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4 shrink-0">
-            <button
-              onClick={() => setIsPlaying(!isPlaying)}
-              title={isPlaying ? "Pause simulation" : "Play simulation"}
-              className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FDF2F2] text-[#BA5A5A] hover:bg-[#FBE8E8] active:scale-95 transition-all shadow-inner cursor-pointer"
-            >
-              {isPlaying ? (
-                <svg className="h-5 w-5 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-              ) : (
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              )}
-            </button>
+      {/* Tabs Selector Toggle */}
+      <div className="flex border-b border-gray-100 mb-2">
+        <button
+          onClick={() => setActiveTab('24h')}
+          className={`pb-3 px-6 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border-b-2 ${
+            activeTab === '24h'
+              ? 'border-[#BA5A5A] text-[#BA5A5A]'
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          24h Forecast (Prophet)
+        </button>
+        <button
+          onClick={() => setActiveTab('short-term')}
+          className={`pb-3 px-6 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer border-b-2 ${
+            activeTab === 'short-term'
+              ? 'border-[#BA5A5A] text-[#BA5A5A]'
+              : 'border-transparent text-gray-400 hover:text-gray-600'
+          }`}
+        >
+          Sub-Hourly ML Forecast (Random Forest)
+        </button>
+      </div>
+
+      {/* Simulation Timeline (Only for 24h tab) */}
+      {activeTab === '24h' && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4 shrink-0">
+              <button
+                onClick={() => setIsPlaying(!isPlaying)}
+                title={isPlaying ? "Pause simulation" : "Play simulation"}
+                className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FDF2F2] text-[#BA5A5A] hover:bg-[#FBE8E8] active:scale-95 transition-all shadow-inner cursor-pointer"
+              >
+                {isPlaying ? (
+                  <svg className="h-5 w-5 animate-pulse" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                ) : (
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                )}
+              </button>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Time Travel Simulation</p>
+                <h3 className="text-2xl font-black text-gray-900">
+                  {formatTime(selectedHour)}
+                </h3>
+              </div>
+            </div>
+            <div className="flex-1 w-full md:px-8">
+              <input
+                type="range"
+                min="0"
+                max="23"
+                value={selectedHour}
+                onChange={(e) => {
+                  setSelectedHour(parseInt(e.target.value));
+                  setIsPlaying(false);
+                }}
+                className="custom-slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-100 focus:outline-none transition-all duration-300"
+                style={{
+                  background: `linear-gradient(90deg, #BA5A5A ${(selectedHour / 23) * 100}%, #F3F4F6 ${(selectedHour / 23) * 100}%)`
+                }}
+              />
+              <div className="mt-2 flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                <span>12:00 AM</span>
+                <span>06:00 AM</span>
+                <span>Noon</span>
+                <span>06:00 PM</span>
+                <span>11:00 PM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Weather Strip (Only for 24h tab) */}
+      {activeTab === '24h' && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between overflow-hidden relative shadow-sm">
+          {/* Left Side */}
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FEF6EC] text-[#D29C42]">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+              </svg>
+            </div>
             <div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Time Travel Simulation</p>
-              <h3 className="text-2xl font-black text-gray-900">
-                {formatTime(selectedHour)}
-              </h3>
+              <div className="text-sm font-bold text-gray-800">
+                {predictions?.weather_escalation?.condition || 'Clear Sky'}
+              </div>
+              <div className="text-xs text-gray-400 font-semibold mt-0.5">
+                {predictions?.weather_escalation?.temperature || '28'}°C · Humidity {predictions?.weather_escalation?.humidity || '60'}%
+              </div>
             </div>
-          </div>
-          <div className="flex-1 w-full md:px-8">
-            <input
-              type="range"
-              min="0"
-              max="23"
-              value={selectedHour}
-              onChange={(e) => {
-                setSelectedHour(parseInt(e.target.value));
-                setIsPlaying(false);
-              }}
-              className="custom-slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-gray-100 focus:outline-none transition-all duration-300"
-              style={{
-                background: `linear-gradient(90deg, #BA5A5A ${(selectedHour / 23) * 100}%, #F3F4F6 ${(selectedHour / 23) * 100}%)`
-              }}
-            />
-            <div className="mt-2 flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-wider">
-              <span>12:00 AM</span>
-              <span>06:00 AM</span>
-              <span>Noon</span>
-              <span>06:00 PM</span>
-              <span>11:00 PM</span>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Weather Strip */}
-      <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between overflow-hidden relative shadow-sm">
-        {/* Left Side */}
-        <div className="flex items-center gap-4 relative z-10">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#FEF6EC] text-[#D29C42]">
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-12.728l.707.707m12.728 12.728l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+            <div className="bg-[#EEF7F2] text-[#489C6F] font-bold text-[11px] px-3 py-1 rounded-full flex items-center gap-1.5 ml-2">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+              <span>Normal risk levels</span>
+            </div>
+          </div>
+
+          {/* 3D City Skyline Silhouette Graphic */}
+          <div className="absolute bottom-0 right-0 h-16 w-80 pointer-events-none select-none z-0">
+            <svg className="w-full h-full text-gray-100" viewBox="0 0 320 64" fill="currentColor">
+              <path d="M0,64 L0,48 L15,48 L15,35 L30,35 L30,56 L45,56 L45,42 L60,42 L60,64 L75,64 L75,38 L90,38 L90,64 H105 V44 H120 V64 H135 V30 H150 V64 H165 V40 H180 V64 H195 V32 H210 V64 H225 V48 H240 V64 H255 V36 H270 V64 H285 V44 H300 V64 H320 V64 Z" opacity="0.4" />
+              <path d="M10,64 L10,54 L25,54 L25,44 L40,44 L40,58 L55,58 L55,48 L70,48 L70,64 L85,64 L85,46 L100,46 L100,64 H115 V52 H130 V64 H145 V36 H160 V64 H175 V46 H190 V64 H205 V38 H220 V64 H235 V52 H250 V64 H265 V42 H280 V64 H295 H310 V64 Z" opacity="0.75" />
             </svg>
           </div>
-          <div>
-            <div className="text-sm font-bold text-gray-800">
-              {predictions?.weather_escalation?.condition || 'Clear Sky'}
+        </div>
+      )}
+
+      {/* ML Status Strip (Only for short-term tab) */}
+      {activeTab === 'short-term' && (
+        <div className="bg-white border border-gray-100 rounded-2xl p-4 flex items-center justify-between overflow-hidden relative shadow-sm">
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EEF7F2] text-[#489C6F]">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
             </div>
-            <div className="text-xs text-gray-400 font-semibold mt-0.5">
-              {predictions?.weather_escalation?.temperature || '28'}°C · Humidity {predictions?.weather_escalation?.humidity || '60'}%
+            <div>
+              <div className="text-sm font-bold text-gray-800">
+                Random Forest Regressor (Global Model)
+              </div>
+              <div className="text-xs text-gray-400 font-semibold mt-0.5">
+                Features: Lags (15m, 30m, 45m) · 1h Rolling Mean · Time Variables · Zone Coordinates
+              </div>
+            </div>
+            <div className="bg-[#EEF7F2] text-[#489C6F] font-bold text-[10px] px-3 py-1 rounded-full flex items-center gap-1.5 ml-2">
+              <span className="relative flex h-1.5 w-1.5 shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+              </span>
+              <span>Model Active &amp; Trained</span>
             </div>
           </div>
 
-          <div className="bg-[#EEF7F2] text-[#489C6F] font-bold text-[11px] px-3 py-1 rounded-full flex items-center gap-1.5 ml-2">
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          {/* 3D City Skyline Silhouette Graphic */}
+          <div className="absolute bottom-0 right-0 h-16 w-80 pointer-events-none select-none z-0">
+            <svg className="w-full h-full text-gray-100" viewBox="0 0 320 64" fill="currentColor">
+              <path d="M0,64 L0,48 L15,48 L15,35 L30,35 L30,56 L45,56 L45,42 L60,42 L60,64 L75,64 L75,38 L90,38 L90,64 H105 V44 H120 V64 H135 V30 H150 V64 H165 V40 H180 V64 H195 V32 H210 V64 H225 V48 H240 V64 H255 V36 H270 V64 H285 V44 H300 V64 H320 V64 Z" opacity="0.4" />
+              <path d="M10,64 L10,54 L25,54 L25,44 L40,44 L40,58 L55,58 L55,48 L70,48 L70,64 L85,64 L85,46 L100,46 L100,64 H115 V52 H130 V64 H145 V36 H160 V64 H175 V46 H190 V64 H205 V38 H220 V64 H235 V52 H250 V64 H265 V42 H280 V64 H295 H310 V64 Z" opacity="0.75" />
             </svg>
-            <span>Normal risk levels</span>
           </div>
         </div>
-
-        {/* 3D City Skyline Overlapping Silhouette Graphic */}
-        <div className="absolute bottom-0 right-0 h-16 w-80 pointer-events-none select-none z-0">
-          <svg className="w-full h-full text-gray-100" viewBox="0 0 320 64" fill="currentColor">
-            {/* Back row of buildings (lightest grey) */}
-            <path d="M0,64 L0,48 L15,48 L15,35 L30,35 L30,56 L45,56 L45,42 L60,42 L60,64 L75,64 L75,38 L90,38 L90,64 H105 V44 H120 V64 H135 V30 H150 V64 H165 V40 H180 V64 H195 V32 H210 V64 H225 V48 H240 V64 H255 V36 H270 V64 H285 V44 H300 V64 H320 V64 Z" opacity="0.4" />
-            {/* Front row of buildings (slightly darker grey) */}
-            <path d="M10,64 L10,54 L25,54 L25,44 L40,44 L40,58 L55,58 L55,48 L70,48 L70,64 L85,64 L85,46 L100,46 L100,64 H115 V52 H130 V64 H145 V36 H160 V64 H175 V46 H190 V64 H205 V38 H220 V64 H235 V52 H250 V64 H265 V42 H280 V64 H295 H310 V64 Z" opacity="0.75" />
-          </svg>
-        </div>
-      </div>
+      )}
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
         {/* Left Column: Risk Rankings Bar Chart */}
-        <div className="lg:col-span-3 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-bold text-gray-900">Risk Rankings</h3>
-              <div className="text-gray-400 border border-gray-200 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold cursor-help" title="Visualizes risk scores derived from predictions">
-                i
+        {activeTab === 'short-term' ? (
+          <div className="lg:col-span-3 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900">Sub-Hourly Violations Forecast</h3>
+                <div className="text-gray-400 border border-gray-200 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold cursor-help" title="Predicted violations for the next 15-minute and 30-minute horizons">
+                  i
+                </div>
+              </div>
+              <div className="text-xs font-bold text-[#BA5A5A] bg-[#FDF2F2] px-2.5 py-1.5 rounded-lg">
+                Model: RandomForestRegressor
               </div>
             </div>
-            <select
-              value={rankingMetric}
-              onChange={(e) => setRankingMetric(e.target.value)}
-              className="text-xs font-bold text-gray-500 border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white outline-none cursor-pointer hover:border-gray-300 shadow-sm"
-            >
-              <option value="risk">Risk Score</option>
-              <option value="violations">Violations</option>
-            </select>
-          </div>
 
-          <div className="h-80 w-full relative">
-            <ResponsiveContainer width="99%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: -10, right: 30, top: 0, bottom: 0 }}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="zone" type="category" width={80} tickLine={false} axisLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 700 }} />
-                <Tooltip
-                  formatter={(value, name) => [
-                    value,
-                    name === 'risk' ? 'Risk Score' : 'Predicted Violations'
-                  ]}
-                  contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-                  labelStyle={{ color: '#1F2937', fontWeight: 'bold' }}
-                />
-                <Bar dataKey={rankingMetric} radius={[0, 6, 6, 0]} barSize={12}>
-                  {chartData.map((_, i) => (
-                    <Cell key={i} fill={RISK_COLORS[i % RISK_COLORS.length]} />
-                  ))}
-                  <LabelList dataKey={rankingMetric} position="right" style={{ fill: '#4B5563', fontSize: 11, fontWeight: 800 }} />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="h-80 w-full relative">
+              <ResponsiveContainer width="99%" height="100%">
+                <BarChart data={shortTermChartData} layout="vertical" margin={{ left: -10, right: 30, top: 0, bottom: 0 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="zone" type="category" width={80} tickLine={false} axisLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 700 }} />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      value,
+                      name === 'predicted_15m' ? 'Predicted (15m)' : 'Predicted (30m Cumulative)'
+                    ]}
+                    contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                    labelStyle={{ color: '#1F2937', fontWeight: 'bold' }}
+                  />
+                  <Bar dataKey="predicted_15m" fill="#BA5A5A" radius={[0, 6, 6, 0]} name="Next 15m" barSize={8}>
+                    <LabelList dataKey="predicted_15m" position="right" style={{ fill: '#4B5563', fontSize: 9, fontWeight: 800 }} />
+                  </Bar>
+                  <Bar dataKey="predicted_30m" fill="#E67E22" radius={[0, 6, 6, 0]} name="Next 30m" barSize={8}>
+                    <LabelList dataKey="predicted_30m" position="right" style={{ fill: '#4B5563', fontSize: 9, fontWeight: 800 }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="lg:col-span-3 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-bold text-gray-900">Risk Rankings</h3>
+                <div className="text-gray-400 border border-gray-200 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold cursor-help" title="Visualizes risk scores derived from predictions">
+                  i
+                </div>
+              </div>
+              <select
+                value={rankingMetric}
+                onChange={(e) => setRankingMetric(e.target.value)}
+                className="text-xs font-bold text-gray-500 border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white outline-none cursor-pointer hover:border-gray-300 shadow-sm"
+              >
+                <option value="risk">Risk Score</option>
+                <option value="violations">Violations</option>
+              </select>
+            </div>
+
+            <div className="h-80 w-full relative">
+              <ResponsiveContainer width="99%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ left: -10, right: 30, top: 0, bottom: 0 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="zone" type="category" width={80} tickLine={false} axisLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 700 }} />
+                  <Tooltip
+                    formatter={(value, name) => [
+                      value,
+                      name === 'risk' ? 'Risk Score' : 'Predicted Violations'
+                    ]}
+                    contentStyle={{ background: '#FFFFFF', border: '1px solid #E5E7EB', borderRadius: 12, boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                    labelStyle={{ color: '#1F2937', fontWeight: 'bold' }}
+                  />
+                  <Bar dataKey={rankingMetric} radius={[0, 6, 6, 0]} barSize={12}>
+                    {chartData.map((_, i) => (
+                      <Cell key={i} fill={RISK_COLORS[i % RISK_COLORS.length]} />
+                    ))}
+                    <LabelList dataKey={rankingMetric} position="right" style={{ fill: '#4B5563', fontSize: 11, fontWeight: 800 }} />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         {/* Right Column: Top High-Risk Zones List */}
-        <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Top High-Risk Zones</h3>
-              <button
-                onClick={() => setShowAllZones(prev => !prev)}
-                className="text-xs font-bold text-[#BA5A5A] hover:underline cursor-pointer"
-              >
-                {showAllZones ? 'Show less' : 'View all →'}
-              </button>
-            </div>
+        {activeTab === 'short-term' ? (
+          <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Top High-Risk Zones (ML)</h3>
+                <button
+                  onClick={() => setShowAllZones(prev => !prev)}
+                  className="text-xs font-bold text-[#BA5A5A] hover:underline cursor-pointer"
+                >
+                  {showAllZones ? 'Show less' : 'View all →'}
+                </button>
+              </div>
 
-            <div className="divide-y divide-gray-50">
-              {simulatedZones.slice(0, showAllZones ? 10 : 3).map((zone, idx) => {
-                const rankColorClass = idx === 0
-                  ? 'bg-[#FDF2F2] text-[#BA5A5A]'
-                  : idx === 1
-                  ? 'bg-[#FEF6EC] text-[#D29C42]'
-                  : idx === 2
-                  ? 'bg-[#F0FDF4] text-[#489C6F]'
-                  : 'bg-gray-50 text-gray-500';
-                return (
-                  <div key={zone.zone} className="flex items-center justify-between py-4">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm ${rankColorClass}`}>
-                        #{zone.simulatedRank}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-extrabold text-sm text-gray-800 truncate">{zone.zone}</span>
-                          {zone.weather_boosted && (
-                            <span className="rounded bg-[#FEF6EC] px-1.5 py-0.5 text-[9px] font-bold text-[#D29C42]">
-                              🌧️ Rain
-                            </span>
-                          )}
+              <div className="divide-y divide-gray-50">
+                {sortedShortTerm.slice(0, showAllZones ? 16 : 3).map((zone, idx) => {
+                  const rankColorClass = idx === 0
+                    ? 'bg-[#FDF2F2] text-[#BA5A5A]'
+                    : idx === 1
+                    ? 'bg-[#FEF6EC] text-[#D29C42]'
+                    : idx === 2
+                    ? 'bg-[#F0FDF4] text-[#489C6F]'
+                    : 'bg-gray-50 text-gray-500';
+                  
+                  const confColorClass = zone.confidence >= 0.8
+                    ? 'bg-[#EAFDF3] text-[#2B7D50]'
+                    : zone.confidence >= 0.6
+                    ? 'bg-[#FEF6EC] text-[#B87C21]'
+                    : 'bg-[#FDF2F2] text-[#BA5A5A]';
+
+                  const trend = zone.predicted_30m > zone.predicted_15m * 1.5
+                    ? { icon: '📈', text: 'Spike Expected', color: 'text-red-500' }
+                    : zone.predicted_30m > zone.predicted_15m
+                    ? { icon: '↗️', text: 'Increasing', color: 'text-orange-500' }
+                    : zone.predicted_30m < zone.predicted_15m
+                    ? { icon: '↘️', text: 'Decreasing', color: 'text-green-500' }
+                    : { icon: '➡️', text: 'Stable', color: 'text-gray-500' };
+
+                  return (
+                    <div key={zone.zone} className="flex items-center justify-between py-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm ${rankColorClass}`}>
+                          #{idx + 1}
                         </div>
-                        <p className="mt-0.5 text-[11px] text-gray-400 font-semibold">
-                          {zone.simulatedViolations} violations · Peak {formatTime(zone.peak_hour)}
-                        </p>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-sm text-gray-800 truncate">{zone.zone}</span>
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${confColorClass}`}>
+                              {Math.round(zone.confidence * 100)}% conf
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-[11px] text-gray-400 font-semibold">
+                            Current: <span className="text-gray-600 font-bold">{zone.current_violations}</span> · 
+                            15m: <span className="text-gray-800 font-bold">{zone.predicted_15m}</span> · 
+                            30m: <span className="text-gray-800 font-bold">{zone.predicted_30m}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 shrink-0 pl-2">
+                        <div className="text-right">
+                          <span className={`text-xs font-bold ${trend.color} flex items-center gap-0.5 justify-end`}>
+                            <span>{trend.icon}</span>
+                          </span>
+                          <span className="text-[9px] text-gray-400 font-semibold uppercase tracking-tight">{trend.text}</span>
+                        </div>
+                        <div className="shrink-0 text-right pl-1">
+                          <div className="text-[9px] font-bold text-gray-400 uppercase leading-none">30m ML</div>
+                          <div className="text-lg font-black text-gray-900 leading-tight mt-0.5">
+                            +{zone.predicted_30m}
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Dynamic SVG Sparkline peaking at peak hour */}
-                    <div className="w-20 sm:w-24 h-8 shrink-0 flex items-center justify-center">
-                      <svg className="w-full h-full overflow-visible" viewBox="0 0 80 24">
-                        <defs>
-                          <linearGradient id={`grad-${idx}`} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#BA5A5A" stopOpacity="0.2" />
-                            <stop offset="100%" stopColor="#BA5A5A" stopOpacity="0.0" />
-                          </linearGradient>
-                        </defs>
-                        {/* Area Path */}
-                        <path
-                           d={`${generateSparklineAreaPath(zone.peak_hour)} L 80,24 L 0,24 Z`}
-                          fill={`url(#grad-${idx})`}
-                        />
-                        {/* Line Path */}
-                        <path
-                          d={generateSparklinePath(zone.peak_hour)}
-                          fill="none"
-                          stroke="#BA5A5A"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                        />
-                        {/* Peak Dot */}
-                        <circle
-                          cx="40"
-                          cy={12}
-                          r="3"
-                          fill="#BA5A5A"
-                          stroke="#FFFFFF"
-                          strokeWidth="1.5"
-                        />
-                      </svg>
-                    </div>
-
-                    {/* Risk Score Display */}
-                    <div className="shrink-0 text-right pl-3">
-                      <div className="text-[9px] font-bold text-gray-400 uppercase leading-none">Risk Score</div>
-                      <div className="text-xl font-black text-gray-900 leading-tight mt-0.5">
-                        {zone.simulatedRisk}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
 
-          <button
-            onClick={() => setShowAllZones(prev => !prev)}
-            className="w-full text-center text-xs font-bold text-[#BA5A5A] bg-[#FDF2F2] hover:bg-[#FBE8E8] py-3.5 rounded-xl transition-all cursor-pointer mt-4"
-          >
-            {showAllZones ? 'Show less' : 'View all 10 high-risk zones →'}
-          </button>
-        </div>
+            <button
+              onClick={() => setShowAllZones(prev => !prev)}
+              className="w-full text-center text-xs font-bold text-[#BA5A5A] bg-[#FDF2F2] hover:bg-[#FBE8E8] py-3.5 rounded-xl transition-all cursor-pointer mt-4"
+            >
+              {showAllZones ? 'Show less' : 'View all 16 ML predictions →'}
+            </button>
+          </div>
+        ) : (
+          <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-900">Top High-Risk Zones</h3>
+                <button
+                  onClick={() => setShowAllZones(prev => !prev)}
+                  className="text-xs font-bold text-[#BA5A5A] hover:underline cursor-pointer"
+                >
+                  {showAllZones ? 'Show less' : 'View all →'}
+                </button>
+              </div>
+
+              <div className="divide-y divide-gray-50">
+                {simulatedZones.slice(0, showAllZones ? 10 : 3).map((zone, idx) => {
+                  const rankColorClass = idx === 0
+                    ? 'bg-[#FDF2F2] text-[#BA5A5A]'
+                    : idx === 1
+                    ? 'bg-[#FEF6EC] text-[#D29C42]'
+                    : idx === 2
+                    ? 'bg-[#F0FDF4] text-[#489C6F]'
+                    : 'bg-gray-50 text-gray-500';
+                  return (
+                    <div key={zone.zone} className="flex items-center justify-between py-4">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-sm ${rankColorClass}`}>
+                          #{zone.simulatedRank}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-sm text-gray-800 truncate">{zone.zone}</span>
+                            {zone.weather_boosted && (
+                              <span className="rounded bg-[#FEF6EC] px-1.5 py-0.5 text-[9px] font-bold text-[#D29C42]">
+                                🌧️ Rain
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-0.5 text-[11px] text-gray-400 font-semibold">
+                            {zone.simulatedViolations} violations · Peak {formatTime(zone.peak_hour)}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Dynamic SVG Sparkline peaking at peak hour */}
+                      <div className="w-20 sm:w-24 h-8 shrink-0 flex items-center justify-center">
+                        <svg className="w-full h-full overflow-visible" viewBox="0 0 80 24">
+                          <defs>
+                            <linearGradient id={`grad-${idx}`} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#BA5A5A" stopOpacity="0.2" />
+                              <stop offset="100%" stopColor="#BA5A5A" stopOpacity="0.0" />
+                            </linearGradient>
+                          </defs>
+                          {/* Area Path */}
+                          <path
+                             d={`${generateSparklineAreaPath(zone.peak_hour)} L 80,24 L 0,24 Z`}
+                            fill={`url(#grad-${idx})`}
+                          />
+                          {/* Line Path */}
+                          <path
+                            d={generateSparklinePath(zone.peak_hour)}
+                            fill="none"
+                            stroke="#BA5A5A"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          {/* Peak Dot */}
+                          <circle
+                            cx="40"
+                            cy={12}
+                            r="3"
+                            fill="#BA5A5A"
+                            stroke="#FFFFFF"
+                            strokeWidth="1.5"
+                          />
+                        </svg>
+                      </div>
+
+                      {/* Risk Score Display */}
+                      <div className="shrink-0 text-right pl-3">
+                        <div className="text-[9px] font-bold text-gray-400 uppercase leading-none">Risk Score</div>
+                        <div className="text-xl font-black text-gray-900 leading-tight mt-0.5">
+                          {zone.simulatedRisk}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowAllZones(prev => !prev)}
+              className="w-full text-center text-xs font-bold text-[#BA5A5A] bg-[#FDF2F2] hover:bg-[#FBE8E8] py-3.5 rounded-xl transition-all cursor-pointer mt-4"
+            >
+              {showAllZones ? 'Show less' : 'View all 10 high-risk zones →'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Heatmap Card */}

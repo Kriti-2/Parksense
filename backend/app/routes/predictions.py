@@ -13,3 +13,12 @@ def get_predictions(request: Request):
     store = get_data_store()
     result = store.get_forecast()
     return result.model_dump(mode="json")
+
+
+@router.get("/predictions/short-term")
+@limiter.limit(lambda: get_settings().rate_limit_public)
+def get_short_term_predictions(request: Request):
+    store = get_data_store()
+    result = store.get_short_term_forecast()
+    return result.model_dump(mode="json")
+

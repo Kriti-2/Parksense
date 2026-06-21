@@ -21,6 +21,7 @@ class ViolationDataStore:
     _instance: "ViolationDataStore | None" = None
     _df: pd.DataFrame | None = None
     _forecast_cache: Any = None
+    _short_term_forecast_cache: Any = None
     _analytics_cache: dict | None = None
     _recidivism_cache: dict | None = None
     _shift_planner_cache: dict | None = None
@@ -67,6 +68,7 @@ class ViolationDataStore:
 
     def _clear_derived_caches(self) -> None:
         self._forecast_cache = None
+        self._short_term_forecast_cache = None
         self._analytics_cache = None
         self._recidivism_cache = None
         self._shift_planner_cache = None
@@ -120,6 +122,13 @@ class ViolationDataStore:
         self._heatmap_cache = build_heatmap_response(df, limit=5000, zone_intensity=None, zone_speeds=speeds)
         self._severity_cache = build_severity_response(recent if not recent.empty else df, limit=30)
         self._corridors_cache = build_corridors_response(recent if not recent.empty else df, recent_only=False)
+
+        # Warm short-term forecast
+        from app.models.short_term_forecaster import ShortTermParkPredictForecaster
+        st_forecaster = ShortTermParkPredictForecaster()
+        st_forecaster.train(df)
+        self._short_term_forecast_cache = st_forecaster.predict(df, ref)
+
         self._caches_warmed = True
         logger.info("API caches warmed successfully")
 
@@ -137,6 +146,19 @@ class ViolationDataStore:
             self._shift_planner_cache = build_shift_planner_response(df, self._forecast_cache)
         return self._forecast_cache
 
+    def warm_short_term_forecast(self):
+        """Run ML short-term forecasting (Celery / scheduled job)."""
+        from app.models.short_term_forecaster import ShortTermParkPredictForecaster
+        from app.utilities.time_context import get_reference_time
+
+        df = self.load()
+        logger.info("Running short-term ML forecast for %d violations", len(df))
+        st_forecaster = ShortTermParkPredictForecaster()
+        st_forecaster.train(df)
+        ref = get_reference_time(df, use_wall_clock=True)
+        self._short_term_forecast_cache = st_forecaster.predict(df, ref)
+        return self._short_term_forecast_cache
+
     def get_forecast(self):
         if self._forecast_cache is None:
             if self._df is None:
@@ -149,6 +171,18 @@ class ViolationDataStore:
                 )
             self.warm_caches()
         return self._forecast_cache
+
+    def get_short_term_forecast(self):
+        if self._short_term_forecast_cache is None:
+            if self._df is None:
+                from app.models.forecast_schemas import ShortTermForecastResponse
+                return ShortTermForecastResponse(
+                    generated_at=datetime.utcnow(),
+                    interval_minutes=15,
+                    predictions=[]
+                )
+            self.warm_caches()
+        return self._short_term_forecast_cache
 
     def get_analytics(self) -> dict:
         if self._analytics_cache is None:

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LabelList,
 } from 'recharts';
 import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
@@ -102,12 +102,16 @@ export default function Analytics() {
         <div className="rounded-xl border border-command-border bg-command-panel p-6">
           <h3 className="text-lg font-semibold text-white">Congestion Fingerprints</h3>
           <p className="text-sm text-command-muted">Live speed drop % by corridor</p>
-          <div className="mt-4 h-64">
+          <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={congestionData}>
                 <XAxis dataKey="zone" tick={{ fill: '#6b7280', fontSize: 10 }} />
                 <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} />
-                <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }} />
+                <Tooltip
+                  contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }}
+                  labelStyle={{ color: '#ffffff', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#e5e7eb' }}
+                />
                 <Bar dataKey="score" fill="#3b82f6" name="Congestion Score" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="speedDrop" fill="#ef4444" name="Speed Drop %" radius={[4, 4, 0, 0]} />
               </BarChart>
@@ -115,28 +119,48 @@ export default function Analytics() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-command-border bg-command-panel p-6">
-          <h3 className="text-lg font-semibold text-white">Violation Distribution</h3>
-          <p className="text-sm text-command-muted">{scopeLabel}</p>
-          <div className="mt-4 h-64">
+        <div className="rounded-xl border border-command-border bg-command-panel p-6 flex flex-col justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-white">Violation Distribution</h3>
+            <p className="text-sm text-command-muted">{scopeLabel}</p>
+          </div>
+          <div className="mt-4 h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={zoneBreakdown}
-                  dataKey="violations"
-                  nameKey="zone"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={80}
-                  label={({ zone, share_pct }) => `${zone} ${share_pct}%`}
-                >
+              <BarChart
+                data={[...zoneBreakdown].sort((a, b) => b.violations - a.violations)}
+                layout="vertical"
+                margin={{ left: 10, right: 35, top: 0, bottom: 0 }}
+              >
+                <XAxis type="number" hide />
+                <YAxis
+                  dataKey="zone"
+                  type="category"
+                  tick={{ fill: '#9ca3af', fontSize: 10, fontWeight: 600 }}
+                  width={90}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }}
+                  labelStyle={{ color: '#ffffff', fontWeight: 'bold' }}
+                  itemStyle={{ color: '#e5e7eb' }}
+                  formatter={(value, name, props) => [
+                    `${value.toLocaleString()} violations (${props.payload.share_pct}%)`,
+                    'Count'
+                  ]}
+                />
+                <Bar dataKey="violations" radius={[0, 4, 4, 0]} barSize={12}>
                   {zoneBreakdown.map((_, i) => (
                     <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
                   ))}
-                </Pie>
-                <Legend />
-                <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }} />
-              </PieChart>
+                  <LabelList
+                    dataKey="share_pct"
+                    position="right"
+                    formatter={(val) => `${val}%`}
+                    style={{ fill: '#9ca3af', fontSize: 9, fontWeight: 700 }}
+                  />
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
@@ -150,7 +174,11 @@ export default function Analytics() {
             <LineChart data={economicData}>
               <XAxis dataKey="zone" tick={{ fill: '#6b7280', fontSize: 10 }} />
               <YAxis tick={{ fill: '#6b7280', fontSize: 10 }} />
-              <Tooltip contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }} />
+              <Tooltip
+                contentStyle={{ background: '#111827', border: '1px solid #374151', borderRadius: 8 }}
+                labelStyle={{ color: '#ffffff', fontWeight: 'bold' }}
+                itemStyle={{ color: '#e5e7eb' }}
+              />
               <Line type="monotone" dataKey="daily" stroke="#ef4444" strokeWidth={2} name="Daily Loss" />
               <Line type="monotone" dataKey="fuel" stroke="#f59e0b" strokeWidth={2} name="Fuel Cost" />
               <Line type="monotone" dataKey="productivity" stroke="#3b82f6" strokeWidth={2} name="Productivity" />

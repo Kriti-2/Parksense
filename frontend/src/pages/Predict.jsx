@@ -412,7 +412,7 @@ export default function Predict() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5 items-start">
         {/* Left Column: Risk Rankings Bar Chart */}
         {activeTab === 'short-term' ? (
           <div className="lg:col-span-3 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 flex flex-col justify-between">
@@ -431,7 +431,7 @@ export default function Predict() {
             <div className="h-80 w-full relative">
               <ResponsiveContainer width="99%" height="100%">
                 <BarChart data={shortTermChartData} layout="vertical" margin={{ left: -10, right: 30, top: 0, bottom: 0 }}>
-                  <XAxis type="number" hide />
+                  <XAxis type="number" domain={[0, 'dataMax + 5']} hide />
                   <YAxis dataKey="zone" type="category" width={80} tickLine={false} axisLine={false} tick={{ fill: '#4B5563', fontSize: 11, fontWeight: 700 }} />
                   <Tooltip
                     formatter={(value, name) => [

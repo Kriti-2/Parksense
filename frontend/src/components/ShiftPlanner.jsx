@@ -13,8 +13,7 @@ export default function ShiftPlanner({ data }) {
     <div className="rounded-xl border border-command-border bg-command-panel p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Shift Planner</h3>
-          <p className="text-sm text-command-muted">Officer deployment recommendations</p>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Officer Deployment Recommendations</h3>
         </div>
         <div className="text-right">
           <p className="text-2xl font-bold text-command-accent">{summary.total_officers_recommended || 0}</p>

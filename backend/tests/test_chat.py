@@ -124,4 +124,45 @@ def test_chat_endpoint_streaming(auth_client, monkeypatch):
         assert call_kwargs["model"] == "gemini-2.5-flash"
         assert "Show me congestion" in call_kwargs["contents"]
 
+def test_chat_endpoint_invalid_key_error(auth_client, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "invalid-key")
+    from app.config import get_settings
+    get_settings.cache_clear()
+
+    import app.routes.chat
+    app.routes.chat._genai_client = None
+
+    mock_client = MagicMock()
+    mock_client.models.list = MagicMock(side_effect=Exception("Failed to query models"))
+    
+    mock_generate = AsyncMock(side_effect=Exception("400 Bad Request. {'message': None, 'status': 'Bad Request'}"))
+    mock_client.aio.models.generate_content = mock_generate
+
+    with patch("google.genai.Client", return_value=mock_client):
+        response = auth_client.post("/chat/", json={"message": "Hello", "stream": False})
+        assert response.status_code == 500
+        assert "Gemini API Error (400 Bad Request)" in response.json()["detail"]
+        assert "GEMINI_API_KEY in your deployed .env" in response.json()["detail"]
+
+def test_chat_endpoint_invalid_key_error_streaming(auth_client, monkeypatch):
+    monkeypatch.setenv("GEMINI_API_KEY", "invalid-key")
+    from app.config import get_settings
+    get_settings.cache_clear()
+
+    import app.routes.chat
+    app.routes.chat._genai_client = None
+
+    mock_client = MagicMock()
+    mock_client.models.list = MagicMock(side_effect=Exception("Failed to query models"))
+    
+    mock_generate_stream = AsyncMock(side_effect=Exception("400 Bad Request. {'message': None, 'status': 'Bad Request'}"))
+    mock_client.aio.models.generate_content_stream = mock_generate_stream
+
+    with patch("google.genai.Client", return_value=mock_client):
+        response = auth_client.post("/chat/", json={"message": "Hello", "stream": True})
+        assert response.status_code == 200
+        assert "Gemini API Error (400 Bad Request)" in response.text
+        assert "GEMINI_API_KEY in your deployed .env" in response.text
+
+
 

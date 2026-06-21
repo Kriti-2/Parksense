@@ -36,12 +36,12 @@ def get_genai_client(api_key: str):
                 status_code=500, detail="google-genai package is not installed."
             )
         from google.genai import types
-        _genai_client = genai.Client(
+        client = genai.Client(
             api_key=api_key,
             http_options=types.HttpOptions(timeout=15000)
         )
         try:
-            available_models = [m.name for m in _genai_client.models.list()]
+            available_models = [m.name for m in client.models.list()]
             available_models_clean = [m.replace("models/", "") for m in available_models]
             preferred_models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
             for pm in preferred_models:
@@ -49,8 +49,30 @@ def get_genai_client(api_key: str):
                     _supported_model = pm
                     logger.info(f"Selected Gemini model based on API support: {_supported_model}")
                     break
+            # Key is valid — cache the client
+            _genai_client = client
         except Exception as e:
+            err_msg = str(e).lower()
+            # Detect invalid / expired API key errors and fail fast
+            if (
+                "api key not valid" in err_msg or
+                "api_key_invalid" in err_msg or
+                "invalid_argument" in err_msg or
+                getattr(e, "code", None) == 400 or
+                getattr(e, "status_code", None) == 400
+            ):
+                logger.error(f"Gemini API key is invalid or expired: {e}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=(
+                        "Gemini API key is invalid or expired. "
+                        "Please verify the GEMINI_API_KEY in your .env file and restart the server. "
+                        f"Original error: {e}"
+                    ),
+                )
+            # Non-auth errors (e.g. network timeout) — cache client anyway and try later
             logger.warning(f"Failed to query available models, defaulting to gemini-2.5-flash: {e}")
+            _genai_client = client
     return _genai_client
 
 # TTL Cache for parsed live data (15 seconds)
@@ -242,6 +264,26 @@ async def ask_assistant(request: Request, payload: ChatMessage):
             str(getattr(e, "status", "")).lower() in ("too many requests", "resource_exhausted")
         )
 
+    # Helper to format a friendly exception message
+    def get_friendly_error_message(e: Exception) -> str:
+        err_msg = str(e)
+        err_msg_lower = err_msg.lower()
+        if is_rate_limit_error(e):
+            return "The AI assistant is currently receiving too many requests. Please wait a moment before trying again."
+        if (
+            "api key not valid" in err_msg_lower or
+            "api_key_invalid" in err_msg_lower or
+            ("400" in err_msg_lower and "bad request" in err_msg_lower) or
+            getattr(e, "code", None) == 400 or
+            getattr(e, "status_code", None) == 400
+        ):
+            return (
+                "Gemini API Error (400 Bad Request). This usually indicates that the GEMINI_API_KEY in your deployed "
+                ".env file is invalid, expired, or not loaded correctly. Please check your deployed .env configuration, "
+                "ensure GEMINI_API_KEY is correct, and restart your containers."
+            )
+        return f"Gemini API Error: {err_msg}"
+
     if payload.stream:
         async def response_generator():
             max_retries = 3
@@ -262,10 +304,7 @@ async def ask_assistant(request: Request, payload: ChatMessage):
                         continue
                     else:
                         logger.error(f"Error calling Gemini API stream: {e}")
-                        if is_rate_limit_error(e):
-                            yield "\n[Error: The AI assistant is currently receiving too many requests. Please wait a moment before trying again.]"
-                        else:
-                            yield f"\n[Error: {str(e)}]"
+                        yield f"\n[Error: {get_friendly_error_message(e)}]"
                         return
 
             if stream:
@@ -275,10 +314,7 @@ async def ask_assistant(request: Request, payload: ChatMessage):
                             yield chunk.text
                 except Exception as e:
                     logger.error(f"Error during Gemini API stream consumption: {e}")
-                    if is_rate_limit_error(e):
-                        yield "\n[Error: The AI assistant is currently receiving too many requests. Please wait a moment before trying again.]"
-                    else:
-                        yield f"\n[Error: {str(e)}]"
+                    yield f"\n[Error: {get_friendly_error_message(e)}]"
 
         return StreamingResponse(response_generator(), media_type="text/plain")
     else:
@@ -299,9 +335,7 @@ async def ask_assistant(request: Request, payload: ChatMessage):
                     continue
                 else:
                     logger.error(f"Error calling Gemini API: {e}")
-                    if is_rate_limit_error(e):
-                        raise HTTPException(
-                            status_code=429,
-                            detail="The AI assistant is currently receiving too many requests. Please wait a moment before trying again."
-                        )
-                    raise HTTPException(status_code=500, detail=str(e))
+                    friendly_msg = get_friendly_error_message(e)
+                    status_code = 429 if is_rate_limit_error(e) else 500
+                    raise HTTPException(status_code=status_code, detail=friendly_msg)
+

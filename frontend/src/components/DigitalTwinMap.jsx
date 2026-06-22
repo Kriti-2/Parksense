@@ -461,46 +461,57 @@ export default function DigitalTwinMap({
     };
   }, [isLoaded, showTraffic, trafficMode]);
 
-  // Animate vehicle particles along the roads
+  // Animate vehicle particles along the roads (Throttled to ~30 FPS for performance)
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
     if (trafficMode !== 'particles' || !showTraffic) return;
 
     let animFrame;
+    let lastTime = performance.now();
 
-    const animate = () => {
+    const animate = (time) => {
       if (!mapRef.current) return;
-      if (!vehiclesRef.current || vehiclesRef.current.length === 0) {
-        animFrame = requestAnimationFrame(animate);
-        return;
-      }
+      
+      const elapsed = time - lastTime;
+      // Target ~30 FPS (33ms) to reduce CPU utilization
+      if (elapsed >= 33) {
+        lastTime = time;
 
-      // 1. Move vehicles along their paths and interpolate coordinates
-      const features = vehiclesRef.current.map((v, idx) => {
-        v.progress = (v.progress + v.speedFactor) % 1.0;
-        const currentCoords = interpolateRoute(v.coords, v.progress);
+        if (!vehiclesRef.current || vehiclesRef.current.length === 0) {
+          animFrame = requestAnimationFrame(animate);
+          return;
+        }
 
-        return {
-          type: 'Feature',
-          id: idx,
-          geometry: {
-            type: 'Point',
-            coordinates: currentCoords
-          },
-          properties: {
-            color: v.color,
-            routeIdx: v.routeIdx
-          }
-        };
-      });
+        // Normalize animation speed by delta time relative to 60 FPS (16.67ms per frame)
+        const deltaMultiplier = elapsed / 16.67;
 
-      // 2. Set the data on the map source
-      const source = mapRef.current.getSource('traffic-vehicles');
-      if (source) {
-        source.setData({
-          type: 'FeatureCollection',
-          features
+        // 1. Move vehicles along their paths and interpolate coordinates
+        const features = vehiclesRef.current.map((v, idx) => {
+          v.progress = (v.progress + v.speedFactor * deltaMultiplier) % 1.0;
+          const currentCoords = interpolateRoute(v.coords, v.progress);
+
+          return {
+            type: 'Feature',
+            id: idx,
+            geometry: {
+              type: 'Point',
+              coordinates: currentCoords
+            },
+            properties: {
+              color: v.color,
+              routeIdx: v.routeIdx
+            }
+          };
         });
+
+        // 2. Set the data on the map source
+        const source = mapRef.current.getSource('traffic-vehicles');
+        if (source) {
+          source.setData({
+            type: 'FeatureCollection',
+            features
+          });
+        }
       }
 
       animFrame = requestAnimationFrame(animate);
@@ -581,11 +592,91 @@ export default function DigitalTwinMap({
     }
   }, [cyberTheme, isLoaded]);
 
-  // Update 3D Hotspot Pillars and animate them with a breathing effect + ground radar ripples
+  // Update 3D Hotspot Pillars (Static data update - only when zone intensity changes, not every frame)
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
-    
+
+    const pillarSource = mapRef.current.getSource('hotspot-pillars');
+    if (!pillarSource) return;
+
+    if (!showPillars) {
+      pillarSource.setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
+    const fallbackCenters = {
+      'Koramangala': [77.6245, 12.9352],
+      'HSR Layout': [77.6473, 12.9116],
+      'Indiranagar': [77.6408, 12.9784],
+      'MG Road': [77.6063, 12.9750],
+      'Silk Board': [77.6225, 12.9177],
+      'Whitefield': [77.7500, 12.9698],
+      'Majestic': [77.5712, 12.9766],
+      'Hebbal': [77.5978, 13.0358],
+      'Electronic City': [77.6602, 12.8452],
+      'Jayanagar': [77.5824, 12.9284],
+      'Yelahanka': [77.5862, 13.0978],
+      'Marathahalli': [77.6974, 12.9592],
+      'Malleshwaram': [77.5720, 12.9984],
+      'Banashankari': [77.5736, 12.9156],
+      'BTM Layout': [77.6083, 12.9166],
+      'Rajajinagar': [77.5562, 12.9892]
+    };
+
+    const pillarFeatures = [];
+
+    Object.entries(zoneIntensity).forEach(([zone, meta]) => {
+      let lng = BENGALURU_CENTER[0];
+      let lat = BENGALURU_CENTER[1];
+
+      if (fallbackCenters[zone]) {
+        lng = fallbackCenters[zone][0];
+        lat = fallbackCenters[zone][1];
+      }
+
+      const score = meta.congestion_score || 0;
+      let color = '#10B981'; // Vibrant Neon Emerald Green
+      if (score >= 75) color = '#FF3B30'; // Vibrant Neon Red
+      else if (score >= 50) color = '#FF9500'; // Vibrant Neon Orange
+      else if (score >= 25) color = '#FFCC00'; // Vibrant Neon Gold
+
+      const baseHeight = Math.max(100, score * 15);
+
+      // 3D Hexagon Column
+      pillarFeatures.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Polygon',
+          coordinates: getHexagonPolygon(lng, lat, 0.0016)
+        },
+        properties: {
+          zone: zone,
+          height: baseHeight,
+          color: color,
+          congestion_score: score
+        }
+      });
+    });
+
+    pillarSource.setData({
+      type: 'FeatureCollection',
+      features: pillarFeatures
+    });
+  }, [zoneIntensity, isLoaded, showPillars]);
+
+  // Animate flat ground radar ripples (Throttled to ~30 FPS for performance)
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current) return;
+
     let animFrame;
+    const radarSource = mapRef.current.getSource('hotspot-radar');
+    if (!radarSource) return;
+
+    if (!showPillars) {
+      radarSource.setData({ type: 'FeatureCollection', features: [] });
+      return;
+    }
+
     const fallbackCenters = {
       'Koramangala': [77.6245, 12.9352],
       'HSR Layout': [77.6473, 12.9116],
@@ -606,120 +697,82 @@ export default function DigitalTwinMap({
     };
 
     const startTime = performance.now();
+    let lastTime = startTime;
 
-    const animatePillars = (time) => {
+    const animateRipples = (time) => {
       if (!mapRef.current) return;
-      
-      const elapsedSeconds = (time - startTime) / 1000;
-      // Oscillate height scale between 0.92 and 1.08 using sine wave at lower frequency
-      const breathingFactor = 1.0 + Math.sin(elapsedSeconds * 1.2) * 0.08;
-      
-      // Calculate double ripple progresses
-      const pulse1 = (elapsedSeconds * 0.85) % 1.0;
-      const pulse2 = (pulse1 + 0.5) % 1.0;
 
-      const pillarFeatures = [];
-      const radarFeatures = [];
+      const elapsed = time - lastTime;
+      // Throttle update to ~30 FPS (~33ms) to avoid CPU lag
+      if (elapsed >= 33) {
+        lastTime = time;
 
-      Object.entries(zoneIntensity).forEach(([zone, meta]) => {
-        let lng = BENGALURU_CENTER[0];
-        let lat = BENGALURU_CENTER[1];
+        const elapsedSeconds = (time - startTime) / 1000;
+        // Calculate double ripple progresses
+        const pulse1 = (elapsedSeconds * 0.85) % 1.0;
+        const pulse2 = (pulse1 + 0.5) % 1.0;
 
-        if (fallbackCenters[zone]) {
-          lng = fallbackCenters[zone][0];
-          lat = fallbackCenters[zone][1];
+        const radarFeatures = [];
+
+        Object.entries(zoneIntensity).forEach(([zone, meta]) => {
+          let lng = BENGALURU_CENTER[0];
+          let lat = BENGALURU_CENTER[1];
+
+          if (fallbackCenters[zone]) {
+            lng = fallbackCenters[zone][0];
+            lat = fallbackCenters[zone][1];
+          }
+
+          const score = meta.congestion_score || 0;
+          let color = '#10B981'; // Vibrant Neon Emerald Green
+          if (score >= 75) color = '#FF3B30'; // Vibrant Neon Red
+          else if (score >= 50) color = '#FF9500'; // Vibrant Neon Orange
+          else if (score >= 25) color = '#FFCC00'; // Vibrant Neon Gold
+
+          // Staggered ground ripple 1
+          radarFeatures.push({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [lng, lat]
+            },
+            properties: {
+              color: color,
+              radius: 8 + pulse1 * 32, // expands from 8px to 40px
+              opacity: (1.0 - pulse1) * 0.22,
+              stroke_opacity: (1.0 - pulse1) * 0.70
+            }
+          });
+
+          // Staggered ground ripple 2
+          radarFeatures.push({
+            type: 'Feature',
+            geometry: {
+              type: 'Point',
+              coordinates: [lng, lat]
+            },
+            properties: {
+              color: color,
+              radius: 8 + pulse2 * 32,
+              opacity: (1.0 - pulse2) * 0.22,
+              stroke_opacity: (1.0 - pulse2) * 0.70
+            }
+          });
+        });
+
+        const source = mapRef.current.getSource('hotspot-radar');
+        if (source) {
+          source.setData({
+            type: 'FeatureCollection',
+            features: radarFeatures
+          });
         }
-
-        const score = meta.congestion_score || 0;
-        let color = '#10B981'; // Vibrant Neon Emerald Green
-        if (score >= 75) color = '#FF3B30'; // Vibrant Neon Red
-        else if (score >= 50) color = '#FF9500'; // Vibrant Neon Orange
-        else if (score >= 25) color = '#FFCC00'; // Vibrant Neon Gold
-
-        // Use static height (no breathing oscillation)
-        const baseHeight = Math.max(100, score * 15);
-        const dynamicHeight = baseHeight;
-
-        // 3D Hexagon Column
-        pillarFeatures.push({
-          type: 'Feature',
-          geometry: {
-            type: 'Polygon',
-            coordinates: getHexagonPolygon(lng, lat, 0.0016)
-          },
-          properties: {
-            zone: zone,
-            height: dynamicHeight,
-            color: color,
-            congestion_score: score
-          }
-        });
-
-        // Staggered ground ripple 1
-        radarFeatures.push({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [lng, lat]
-          },
-          properties: {
-            color: color,
-            radius: 8 + pulse1 * 32, // expands from 8px to 40px
-            opacity: (1.0 - pulse1) * 0.22,
-            stroke_opacity: (1.0 - pulse1) * 0.70
-          }
-        });
-
-        // Staggered ground ripple 2
-        radarFeatures.push({
-          type: 'Feature',
-          geometry: {
-            type: 'Point',
-            coordinates: [lng, lat]
-          },
-          properties: {
-            color: color,
-            radius: 8 + pulse2 * 32,
-            opacity: (1.0 - pulse2) * 0.22,
-            stroke_opacity: (1.0 - pulse2) * 0.70
-          }
-        });
-      });
-
-      // Update hexagonal towers
-      const pillarSource = mapRef.current.getSource('hotspot-pillars');
-      if (pillarSource) {
-        pillarSource.setData({
-          type: 'FeatureCollection',
-          features: pillarFeatures
-        });
       }
 
-      // Update flat ground radars
-      const radarSource = mapRef.current.getSource('hotspot-radar');
-      if (radarSource) {
-        radarSource.setData({
-          type: 'FeatureCollection',
-          features: radarFeatures
-        });
-      }
-
-      animFrame = requestAnimationFrame(animatePillars);
+      animFrame = requestAnimationFrame(animateRipples);
     };
 
-    if (showPillars) {
-      animFrame = requestAnimationFrame(animatePillars);
-    } else {
-      // Clear data if not showing pillars
-      const pillarSource = mapRef.current.getSource('hotspot-pillars');
-      if (pillarSource) {
-        pillarSource.setData({ type: 'FeatureCollection', features: [] });
-      }
-      const radarSource = mapRef.current.getSource('hotspot-radar');
-      if (radarSource) {
-        radarSource.setData({ type: 'FeatureCollection', features: [] });
-      }
-    }
+    animFrame = requestAnimationFrame(animateRipples);
 
     return () => {
       if (animFrame) {
@@ -874,6 +927,44 @@ export default function DigitalTwinMap({
             <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            </svg>
+          </button>
+
+          {/* Zoom In Button */}
+          <button
+            onClick={() => {
+              if (mapRef.current) {
+                const currentZoom = mapRef.current.getZoom();
+                mapRef.current.easeTo({
+                  zoom: Math.min(currentZoom + 0.8, 18),
+                  duration: 800
+                });
+              }
+            }}
+            title="Zoom In"
+            className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-slate-900/50 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800/80 transition-colors cursor-pointer"
+          >
+            <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+          </button>
+
+          {/* Zoom Out Button */}
+          <button
+            onClick={() => {
+              if (mapRef.current) {
+                const currentZoom = mapRef.current.getZoom();
+                mapRef.current.easeTo({
+                  zoom: Math.max(currentZoom - 0.8, 10),
+                  duration: 800
+                });
+              }
+            }}
+            title="Zoom Out"
+            className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-slate-900/50 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800/80 transition-colors cursor-pointer"
+          >
+            <svg className="h-4.5 w-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
             </svg>
           </button>
 

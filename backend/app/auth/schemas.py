@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from app.models.user import UserRole
 
 
@@ -39,6 +39,14 @@ class UserOut(BaseModel):
     email: str
     full_name: str
     role: UserRole
+    eco_co2_offset: float | None = 0.0
+    eco_fuel_saved: float | None = 0.0
+    eco_time_saved: float | None = 0.0
+
+    @field_validator("eco_co2_offset", "eco_fuel_saved", "eco_time_saved", mode="before")
+    @classmethod
+    def default_none_to_zero(cls, v):
+        return v if v is not None else 0.0
 
     class Config:
         from_attributes = True

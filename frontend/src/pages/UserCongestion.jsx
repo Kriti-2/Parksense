@@ -6,6 +6,7 @@ import { useLiveFeed } from '../hooks/useLiveFeed';
 import TiltCard from '../components/TiltCard';
 import { useTranslation, TranslatedText } from '../context/LanguageContext';
 import PageLoader from '../components/PageLoader';
+import { useAuth } from '../context/AuthContext';
 
 const BENGALURU_CENTER = [12.9716, 77.5946];
 const ADVISORY_COLORS = { red: '#A33B3B', orange: '#C0613F', green: '#3D5A4A' };
@@ -125,20 +126,35 @@ function CarbonTree({ savings }) {
 
 export default function UserCongestion() {
   const { t } = useTranslation();
+  const { user, updateUserData } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Cumulative eco gamification states
-  const [totalSavings, setTotalSavings] = useState(1.4); // baseline starting offset (kg)
-  const [totalFuelSaved, setTotalFuelSaved] = useState(0.55); // baseline starting fuel (L)
-  const [totalTimeSaved, setTotalTimeSaved] = useState(15); // baseline time saved (mins)
+  // Cumulative eco gamification states initialized from database user model
+  const [totalSavings, setTotalSavings] = useState(user?.eco_co2_offset ?? 0.0);
+  const [totalFuelSaved, setTotalFuelSaved] = useState(user?.eco_fuel_saved ?? 0.0);
+  const [totalTimeSaved, setTotalTimeSaved] = useState(user?.eco_time_saved ?? 0.0);
 
   // Routing state
   const [origin, setOrigin] = useState('Silk Board Junction');
   const [destination, setDestination] = useState('MG Road Metro Stn');
   const [calculatedRoutes, setCalculatedRoutes] = useState(null);
   const [routeDetails, setRouteDetails] = useState(null);
+
+  // State to manage real route calculation status
+  const [calculatingRoute, setCalculatingRoute] = useState(false);
+  const [recordingCommute, setRecordingCommute] = useState(false);
+  const [routeSuccessMessage, setRouteSuccessMessage] = useState(null);
+
+  // Keep state synchronized with database profile load/refresh
+  useEffect(() => {
+    if (user) {
+      setTotalSavings(user.eco_co2_offset ?? 0.0);
+      setTotalFuelSaved(user.eco_fuel_saved ?? 0.0);
+      setTotalTimeSaved(user.eco_time_saved ?? 0.0);
+    }
+  }, [user]);
 
   const loadPreview = useCallback(() => {
     setError(null);
@@ -173,63 +189,102 @@ export default function UserCongestion() {
     const start = originLoc.coords;
     const end = destLoc.coords;
 
-    // Create paths standard vs eco
-    const midLat = start[0] + (end[0] - start[0]) * 0.5;
-    const midLng = start[1] + (end[1] - start[1]) * 0.5;
+    setCalculatingRoute(true);
+    setRouteSuccessMessage(null);
 
-    // Standard congested path (swings closer to busy junction)
-    const stdMid = [midLat - 0.008, midLng - 0.004];
-    // Eco-smart bypass (swings around congestion)
-    const ecoMid = [midLat + 0.008, midLng + 0.006];
+    api.calculateRoute(start[0], start[1], end[0], end[1])
+      .then((res) => {
+        setCalculatedRoutes({
+          standard: res.data.standard_route,
+          eco: res.data.eco_route
+        });
 
-    setCalculatedRoutes({
-      standard: [start, stdMid, end],
-      eco: [start, ecoMid, end]
-    });
+        const stats = res.data.stats;
+        setRouteDetails({
+          stdDist: stats.std_dist_km,
+          ecoDist: stats.eco_dist_km,
+          stdTime: stats.std_time_mins,
+          ecoTime: stats.eco_time_mins,
+          stdFuel: stats.std_fuel_liters,
+          ecoFuel: stats.eco_fuel_liters,
+          stdCo2: stats.std_co2_kg,
+          ecoCo2: stats.eco_co2_kg,
+          timeSaved: stats.time_saved_mins,
+          timePct: stats.time_saved_pct,
+          co2Saved: stats.co2_saved_kg,
+          co2Pct: stats.co2_saved_pct,
+          fuelSaved: stats.fuel_saved_liters,
+          fuelPct: stats.fuel_saved_pct
+        });
+      })
+      .catch((err) => {
+        console.error("OSRM route calculation failed. Falling back to direct lines...", err);
+        // Fallback mock routing logic if OSRM is down
+        const midLat = start[0] + (end[0] - start[0]) * 0.5;
+        const midLng = start[1] + (end[1] - start[1]) * 0.5;
+        const stdMid = [midLat - 0.008, midLng - 0.004];
+        const ecoMid = [midLat + 0.008, midLng + 0.006];
 
-    // Mock stats
-    const stdDist = (Math.hypot(start[0]-end[0], start[1]-end[1]) * 100).toFixed(1);
-    const ecoDist = (parseFloat(stdDist) * 1.15).toFixed(1); // Eco route slightly longer
+        setCalculatedRoutes({
+          standard: [start, stdMid, end],
+          eco: [start, ecoMid, end]
+        });
 
-    const stdTime = Math.round(parseFloat(stdDist) * 4.5); // lots of idling
-    const ecoTime = Math.round(parseFloat(ecoDist) * 2.2); // free flowing
+        const stdDist = (Math.hypot(start[0]-end[0], start[1]-end[1]) * 100).toFixed(1);
+        const ecoDist = (parseFloat(stdDist) * 1.15).toFixed(1);
+        const stdTime = Math.round(parseFloat(stdDist) * 4.5);
+        const ecoTime = Math.round(parseFloat(ecoDist) * 2.2);
+        const stdFuel = (parseFloat(stdDist) * 0.13).toFixed(2);
+        const ecoFuel = (parseFloat(ecoDist) * 0.065).toFixed(2);
+        const stdCo2 = (parseFloat(stdFuel) * 2.3).toFixed(2);
+        const ecoCo2 = (parseFloat(ecoFuel) * 2.3).toFixed(2);
+        const timeSaved = stdTime - ecoTime;
+        const co2Saved = (parseFloat(stdCo2) - parseFloat(ecoCo2)).toFixed(2);
+        const fuelSaved = (parseFloat(stdFuel) - parseFloat(ecoFuel)).toFixed(2);
 
-    const stdFuel = (parseFloat(stdDist) * 0.13).toFixed(2);
-    const ecoFuel = (parseFloat(ecoDist) * 0.065).toFixed(2);
+        setRouteDetails({
+          stdDist, ecoDist, stdTime, ecoTime, stdFuel, ecoFuel, stdCo2, ecoCo2,
+          timeSaved, timePct: Math.round((timeSaved / stdTime) * 100),
+          co2Saved, co2Pct: Math.round((co2Saved / stdCo2) * 100),
+          fuelSaved, fuelPct: Math.round((fuelSaved / stdFuel) * 100)
+        });
+      })
+      .finally(() => {
+        setCalculatingRoute(false);
+      });
+  };
 
-    const stdCo2 = (parseFloat(stdFuel) * 2.3).toFixed(2);
-    const ecoCo2 = (parseFloat(ecoFuel) * 2.3).toFixed(2);
+  const handleConfirmEcoCommute = () => {
+    if (!routeDetails) return;
+    setRecordingCommute(true);
 
-    const timeSaved = stdTime - ecoTime;
-    const timePct = Math.round((timeSaved / stdTime) * 100);
+    const co2Saved = parseFloat(routeDetails.co2Saved);
+    const fuelSaved = parseFloat(routeDetails.fuelSaved);
+    const timeSaved = parseInt(routeDetails.timeSaved);
 
-    const co2Saved = (parseFloat(stdCo2) - parseFloat(ecoCo2)).toFixed(2);
-    const co2Pct = Math.round((co2Saved / stdCo2) * 100);
+    api.recordCommute(co2Saved, fuelSaved, timeSaved)
+      .then((res) => {
+        setRouteSuccessMessage(`🌿 Commuted Eco-Smart! Saved ${co2Saved}kg CO₂, ${fuelSaved}L fuel and ${timeSaved} mins!`);
+        if (user) {
+          updateUserData({
+            ...user,
+            eco_co2_offset: res.data.eco_co2_offset,
+            eco_fuel_saved: res.data.eco_fuel_saved,
+            eco_time_saved: res.data.eco_time_saved,
+          });
+        }
+        setTotalSavings(res.data.eco_co2_offset);
+        setTotalFuelSaved(res.data.eco_fuel_saved);
+        setTotalTimeSaved(res.data.eco_time_saved);
 
-    const fuelSaved = (parseFloat(stdFuel) - parseFloat(ecoFuel)).toFixed(2);
-    const fuelPct = Math.round((fuelSaved / stdFuel) * 100);
-
-    setRouteDetails({
-      stdDist,
-      ecoDist,
-      stdTime,
-      ecoTime,
-      stdFuel,
-      ecoFuel,
-      stdCo2,
-      ecoCo2,
-      timeSaved,
-      timePct,
-      co2Saved,
-      co2Pct,
-      fuelSaved,
-      fuelPct
-    });
-
-    // Accumulate metrics dynamically on click!
-    setTotalSavings((prev) => parseFloat((prev + parseFloat(co2Saved)).toFixed(2)));
-    setTotalFuelSaved((prev) => parseFloat((prev + parseFloat(fuelSaved)).toFixed(2)));
-    setTotalTimeSaved((prev) => prev + timeSaved);
+        setTimeout(() => setRouteSuccessMessage(null), 6000);
+      })
+      .catch((err) => {
+        console.error("Failed to record commute to DB:", err);
+      })
+      .finally(() => {
+        setRecordingCommute(false);
+      });
   };
 
   if (loading) {
@@ -418,11 +473,26 @@ export default function UserCongestion() {
             </div>
             <button
               onClick={handleCalculateRoute}
-              className="w-full rounded-xl bg-command-accent text-white py-2.5 text-xs font-semibold hover:opacity-95 active:scale-95 transition-all shadow-md shadow-command-accent/20 cursor-pointer"
+              disabled={calculatingRoute}
+              className="w-full rounded-xl bg-command-accent text-white py-2.5 text-xs font-semibold hover:opacity-95 active:scale-95 transition-all shadow-md shadow-command-accent/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <TranslatedText text="Calculate Route Options" />
+              {calculatingRoute ? (
+                <span className="flex items-center justify-center gap-1.5">
+                  <span className="animate-spin text-sm">🔄</span>
+                  <TranslatedText text="Computing Real Road Options..." />
+                </span>
+              ) : (
+                <TranslatedText text="Calculate Route Options" />
+              )}
             </button>
           </TiltCard>
+
+          {routeSuccessMessage && (
+            <div className="rounded-xl border border-command-success bg-command-success/15 p-4 text-xs font-bold text-command-success text-left animate-slideIn">
+              {routeSuccessMessage}
+            </div>
+          )}
+
           {routeDetails && (
             <div className="rounded-xl border border-command-success/30 bg-command-success/5 p-5 shadow-sm space-y-4 animate-slideIn">
               <div className="flex items-center justify-between border-b border-command-success/20 pb-3 text-left">
@@ -461,6 +531,21 @@ export default function UserCongestion() {
                   💡 **<TranslatedText text="Bypass Notice" />:** <TranslatedText text="Standard path triggers extra start-stop idling. The eco route bypasses the main intersection, conserving fuel." />
                 </p>
               </div>
+
+              <button
+                onClick={handleConfirmEcoCommute}
+                disabled={recordingCommute}
+                className="w-full rounded-xl bg-command-success text-white py-2.5 text-xs font-semibold hover:opacity-95 active:scale-95 transition-all shadow-md shadow-command-success/20 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                {recordingCommute ? (
+                  <span className="flex items-center justify-center gap-1.5">
+                    <span className="animate-spin text-sm">🌿</span>
+                    <TranslatedText text="Logging Commute..." />
+                  </span>
+                ) : (
+                  <TranslatedText text="Confirm & Select Eco-Smart Route" />
+                )}
+              </button>
             </div>
           )}
 

@@ -44,6 +44,8 @@ export const api = {
   getChallans: (vehicleNumber) => client.get(`/public/challan-lookup/${vehicleNumber}`),
   chat: (data) => client.post('/chat/', data),
   translate: (text, targetLang) => client.post('/public/translate', { text, target_lang: targetLang }),
+  calculateRoute: (startLat, startLng, endLat, endLng) => client.get('/public/calculate-route', { params: { start_lat: startLat, start_lng: startLng, end_lat: endLat, end_lng: endLng } }),
+  recordCommute: (co2Saved, fuelSaved, timeSaved) => client.post('/public/record-commute', { co2_saved: co2Saved, fuel_saved: fuelSaved, time_saved: timeSaved }),
 };
 
 export default client;

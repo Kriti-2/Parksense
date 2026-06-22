@@ -77,6 +77,19 @@ export function AuthProvider({ children }) {
     }
   }, [logout, persist]);
 
+  const updateUserData = useCallback((updatedUser) => {
+    setUser(updatedUser);
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...parsed, user: updatedUser }));
+      } catch (err) {
+        console.error("Failed to update user storage:", err);
+      }
+    }
+  }, []);
+
   const value = useMemo(
     () => ({
       user,
@@ -88,8 +101,9 @@ export function AuthProvider({ children }) {
       register,
       loginWithToken,
       logout,
+      updateUserData,
     }),
-    [user, token, loading, login, register, loginWithToken, logout]
+    [user, token, loading, login, register, loginWithToken, logout, updateUserData]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

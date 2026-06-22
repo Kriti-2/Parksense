@@ -25,4 +25,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     otp_code: Mapped[str | None] = mapped_column(String(6), nullable=True)
     otp_expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    eco_co2_offset: Mapped[float] = mapped_column(default=0.0)
+    eco_fuel_saved: Mapped[float] = mapped_column(default=0.0)
+    eco_time_saved: Mapped[float] = mapped_column(default=0.0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

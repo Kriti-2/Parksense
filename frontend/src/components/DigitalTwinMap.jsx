@@ -4,6 +4,18 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 
 const BENGALURU_CENTER = [77.5946, 12.9716]; // [lng, lat] for MapLibre
 
+// Helper to map bright neon colors to professional muted dark-mode palette
+const muteColor = (color) => {
+  const mapping = {
+    '#FF3B30': '#BE123C', // Neon Red -> Soft Rose Red
+    '#FF9500': '#EA580C', // Neon Orange -> Soft Orange
+    '#FFCC00': '#D97706', // Neon Gold -> Soft Amber
+    '#10B981': '#059669', // Neon Green -> Soft Emerald
+  };
+  return mapping[color] || color;
+};
+
+
 // Helper to generate a 6-sided hexagon polygon around a point for 3D extrusion
 function getHexagonPolygon(lng, lat, radius = 0.0016) {
   const coordinates = [];
@@ -163,7 +175,7 @@ export default function DigitalTwinMap({
         data: { type: 'FeatureCollection', features: [] }
       });
 
-      // Neon bottom glow layer
+      // Neon bottom glow layer (disabled for a clean, non-neon style)
       map.addLayer({
         id: 'traffic-flows-glow',
         source: 'traffic-flows',
@@ -175,12 +187,12 @@ export default function DigitalTwinMap({
         paint: {
           'line-color': ['get', 'color'],
           'line-width': 10,
-          'line-opacity': 0.35,
-          'line-blur': 5.0
+          'line-opacity': 0.0,
+          'line-blur': 0.0
         }
       });
 
-      // Neon sharp central core layer
+      // Sharp central core layer (thinner and clean)
       map.addLayer({
         id: 'traffic-flows-core',
         source: 'traffic-flows',
@@ -191,8 +203,8 @@ export default function DigitalTwinMap({
         },
         paint: {
           'line-color': ['get', 'color'],
-          'line-width': 3.0,
-          'line-opacity': 0.95
+          'line-width': 2.0,
+          'line-opacity': 0.85
         }
       });
 
@@ -216,7 +228,7 @@ export default function DigitalTwinMap({
         }
       });
 
-      // 4. Moving Traffic Vehicles
+      // 4. Moving Traffic Vehicles (small, elegant status dots)
       map.addSource('traffic-vehicles', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features: [] }
@@ -227,12 +239,12 @@ export default function DigitalTwinMap({
         source: 'traffic-vehicles',
         type: 'circle',
         paint: {
-          'circle-radius': 5.0,
+          'circle-radius': 2.2,
           'circle-color': ['get', 'color'],
-          'circle-stroke-width': 1.2,
+          'circle-stroke-width': 0.8,
           'circle-stroke-color': '#FFFFFF',
-          'circle-opacity': 0.95,
-          'circle-blur': 0.15
+          'circle-opacity': 0.85,
+          'circle-blur': 0.0
         }
       });
 
@@ -375,12 +387,16 @@ export default function DigitalTwinMap({
       if (trafficMode === 'static') {
         mapRef.current.setPaintProperty('traffic-flows-core', 'line-dasharray', [4, 4]);
         mapRef.current.setPaintProperty('traffic-flows-glow', 'line-dasharray', [4, 4]);
+        mapRef.current.setPaintProperty('traffic-flows-core', 'line-dashoffset', 0);
       } else if (trafficMode === 'particles') {
         mapRef.current.setPaintProperty('traffic-flows-core', 'line-dasharray', [1, 0]);
         mapRef.current.setPaintProperty('traffic-flows-glow', 'line-dasharray', [1, 0]);
+        mapRef.current.setPaintProperty('traffic-flows-core', 'line-dashoffset', 0);
       } else if (trafficMode === 'trails') {
-        // Core trails will be animated, reset glow to full line
+        // Set a static dash array for trails and reset offset
+        mapRef.current.setPaintProperty('traffic-flows-core', 'line-dasharray', [6, 4]);
         mapRef.current.setPaintProperty('traffic-flows-glow', 'line-dasharray', [1, 0]);
+        mapRef.current.setPaintProperty('traffic-flows-core', 'line-dashoffset', 0);
       }
     }
   }, [trafficMode, isLoaded]);
@@ -389,7 +405,19 @@ export default function DigitalTwinMap({
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
     if (trafficData) {
-      mapRef.current.getSource('traffic-flows').setData(trafficData);
+      const features = trafficData.features
+        ? trafficData.features.map(f => ({
+            ...f,
+            properties: {
+              ...f.properties,
+              color: muteColor(f.properties.color || '#10B981')
+            }
+          }))
+        : [];
+      mapRef.current.getSource('traffic-flows').setData({
+        ...trafficData,
+        features
+      });
     }
   }, [trafficData, isLoaded]);
 
@@ -403,7 +431,7 @@ export default function DigitalTwinMap({
       if (!coords || coords.length < 2) return;
       
       const speed = route.properties.current_speed_kmh || 20;
-      const color = route.properties.color || '#10B981';
+      const color = muteColor(route.properties.color || '#10B981');
       
       // Spawn 3 vehicles per route staggered at different starting offsets
       const numVehicles = 3;
@@ -427,25 +455,21 @@ export default function DigitalTwinMap({
     if (trafficMode !== 'trails') return;
 
     let animFrame;
-    let step = 0;
+    let offset = 0;
     let lastTime = performance.now();
 
     const animate = (time) => {
       if (!mapRef.current) return;
       
-      // Throttle update to ~15 FPS (~66ms) to avoid CPU lag
       const elapsed = time - lastTime;
-      if (elapsed >= 66) {
+      // Target ~30 FPS (33ms) to reduce CPU utilization
+      if (elapsed >= 33) {
         lastTime = time;
-        step = (step + 0.5) % 12;
+        const deltaMultiplier = elapsed / 16.67;
+        offset = (offset - 0.3 * deltaMultiplier) % 40;
         
         if (mapRef.current.getLayer('traffic-flows-core') && showTraffic) {
-          mapRef.current.setPaintProperty('traffic-flows-core', 'line-dasharray', [
-            Math.max(0.1, 4 - step),
-            step,
-            Math.max(0.1, step),
-            12 - step
-          ]);
+          mapRef.current.setPaintProperty('traffic-flows-core', 'line-dashoffset', offset);
         }
       }
       
@@ -639,6 +663,7 @@ export default function DigitalTwinMap({
       if (score >= 75) color = '#FF3B30'; // Vibrant Neon Red
       else if (score >= 50) color = '#FF9500'; // Vibrant Neon Orange
       else if (score >= 25) color = '#FFCC00'; // Vibrant Neon Gold
+      color = muteColor(color);
 
       const baseHeight = Math.max(100, score * 15);
 
@@ -728,6 +753,7 @@ export default function DigitalTwinMap({
           if (score >= 75) color = '#FF3B30'; // Vibrant Neon Red
           else if (score >= 50) color = '#FF9500'; // Vibrant Neon Orange
           else if (score >= 25) color = '#FFCC00'; // Vibrant Neon Gold
+          color = muteColor(color);
 
           // Staggered ground ripple 1
           radarFeatures.push({
@@ -786,11 +812,11 @@ export default function DigitalTwinMap({
     if (!isLoaded || !mapRef.current) return;
 
     const colorMap = {
-      'NO PARKING': '#FFCC00',         // Vibrant Neon Gold
-      'DOUBLE PARKING': '#FF9500',     // Vibrant Neon Orange
-      'WRONG SIDE PARKING': '#FF2D55', // Vibrant Neon Pink
-      'OBSTRUCTING TRAFFIC': '#FF3B30',// Vibrant Neon Red
-      'PARKING ON FOOTPATH': '#007AFF',// Vibrant Neon Blue
+      'NO PARKING': '#D97706',         // Muted Gold/Amber
+      'DOUBLE PARKING': '#EA580C',     // Muted Orange
+      'WRONG SIDE PARKING': '#BE123C', // Muted Rose Red
+      'OBSTRUCTING TRAFFIC': '#BE123C',// Muted Rose Red
+      'PARKING ON FOOTPATH': '#0284C7',// Muted Ocean Blue
     };
 
     const enrichedFeatures = violationsData.map(feature => {
@@ -1167,26 +1193,26 @@ export default function DigitalTwinMap({
           <div className="space-y-2.5 pt-0.5">
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF3B30] opacity-35"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF3B30] shadow-[0_0_8px_#FF3B30]"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#BE123C] opacity-35"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#BE123C] shadow-[0_0_8px_#BE123C]"></span>
               </div>
               <span className="font-medium text-white/90">Critical / Avoid (&gt;= 75%)</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF9500] shadow-[0_0_6px_#FF9500]"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#EA580C] shadow-[0_0_6px_#EA580C]"></span>
               </div>
               <span className="font-medium text-white/80">Heavy Delay (&gt;= 50%)</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FFCC00] shadow-[0_0_6px_#FFCC00]"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#D97706] shadow-[0_0_6px_#D97706]"></span>
               </div>
               <span className="font-medium text-white/80">Moderate Delay (&gt;= 25%)</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10B981] shadow-[0_0_6px_#10B981]"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#059669] shadow-[0_0_6px_#059669]"></span>
               </div>
               <span className="font-medium text-white/80">Clear / Low Flow (&lt; 25%)</span>
             </div>
@@ -1195,32 +1221,32 @@ export default function DigitalTwinMap({
           <div className="space-y-2.5 pt-0.5">
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FFCC00] shadow-[0_0_6px_#FFCC00]"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#D97706] shadow-[0_0_6px_#D97706]"></span>
               </div>
               <span className="font-medium text-white/80">No Parking</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF9500] shadow-[0_0_6px_#FF9500]"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#EA580C] shadow-[0_0_6px_#EA580C]"></span>
               </div>
               <span className="font-medium text-white/80">Double Parking</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF2D55] shadow-[0_0_6px_#FF2D55]"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#BE123C] shadow-[0_0_6px_#BE123C]"></span>
               </div>
               <span className="font-medium text-white/80">Wrong Side Parking</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FF3B30] opacity-35"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FF3B30] shadow-[0_0_8px_#FF3B30]"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#BE123C] opacity-35"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#BE123C] shadow-[0_0_8px_#BE123C]"></span>
               </div>
               <span className="font-medium text-white/90">Obstructing Traffic</span>
             </div>
             <div className="flex items-center gap-2.5">
               <div className="relative flex h-3 w-3 shrink-0">
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#007AFF] shadow-[0_0_6px_#007AFF]"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-[#0284C7] shadow-[0_0_6px_#0284C7]"></span>
               </div>
               <span className="font-medium text-white/80">Footpath Parking</span>
             </div>

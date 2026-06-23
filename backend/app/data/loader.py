@@ -1,5 +1,6 @@
 import json
 import logging
+import threading
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -19,6 +20,7 @@ class ViolationDataStore:
     """Load and cache Bengaluru parking violation dataset and derived API responses."""
 
     _instance: "ViolationDataStore | None" = None
+    _lock = threading.Lock()
     _df: pd.DataFrame | None = None
     _forecast_cache: Any = None
     _short_term_forecast_cache: Any = None
@@ -33,7 +35,9 @@ class ViolationDataStore:
 
     def __new__(cls):
         if cls._instance is None:
-            cls._instance = super().__new__(cls)
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
         return cls._instance
 
     def load(self, force_reload: bool = False) -> pd.DataFrame:
@@ -83,54 +87,58 @@ class ViolationDataStore:
         if self._caches_warmed:
             return
 
-        logger.info("Warming API caches (forecast, analytics, recidivism, shift-planner)...")
-        df = self.load()
+        with self._lock:
+            if self._caches_warmed:
+                return
 
-        from app.models.forecaster import ParkPredictForecaster
-        from app.services.analytics_service import build_analytics_response, _build_violation_trends
-        from app.services.shift_planner import build_shift_planner_response
-        from app.services.heatmap_service import build_heatmap_response
-        from app.services.severity_service import build_severity_response
-        from app.services.corridors_service import build_corridors_response
-        from app.services.live_buffer import get_live_buffer
-        from app.services.realtime_engine import get_realtime_engine
-        from app.services.traffic_service import TrafficService
-        from app.utilities.time_context import get_reference_time
+            logger.info("Warming API caches (forecast, analytics, recidivism, shift-planner)...")
+            df = self.load()
 
-        forecaster = ParkPredictForecaster(use_prophet=False)
-        self._forecast_cache = forecaster.forecast(df)
+            from app.models.forecaster import ParkPredictForecaster
+            from app.services.analytics_service import build_analytics_response, _build_violation_trends
+            from app.services.shift_planner import build_shift_planner_response
+            from app.services.heatmap_service import build_heatmap_response
+            from app.services.severity_service import build_severity_response
+            from app.services.corridors_service import build_corridors_response
+            from app.services.live_buffer import get_live_buffer
+            from app.services.realtime_engine import get_realtime_engine
+            from app.services.traffic_service import TrafficService
+            from app.utilities.time_context import get_reference_time
 
-        get_live_buffer().configure_replay_pool(df)
-        rt = get_realtime_engine()
-        recent = rt.recent_window(hours=24)
-        traffic = TrafficService()
-        speeds = traffic.get_zone_speeds(recent)
-        ref = get_reference_time(df, use_wall_clock=True)
-        self._trends_cache = _build_violation_trends(df, reference=ref)
+            forecaster = ParkPredictForecaster(use_prophet=False)
+            self._forecast_cache = forecaster.forecast(df)
 
-        self._analytics_cache = build_analytics_response(
-            df,
-            zone_speeds=speeds,
-            recent_df=recent,
-            reference=ref,
-            live=True,
-            traffic_meta=traffic.last_meta,
-            trends_cache=self._trends_cache,
-        )
-        self._recidivism_cache = self._build_recidivism_response(df)
-        self._shift_planner_cache = build_shift_planner_response(df, self._forecast_cache)
-        self._heatmap_cache = build_heatmap_response(df, limit=5000, zone_intensity=None, zone_speeds=speeds)
-        self._severity_cache = build_severity_response(recent if not recent.empty else df, limit=30)
-        self._corridors_cache = build_corridors_response(recent if not recent.empty else df, recent_only=False)
+            get_live_buffer().configure_replay_pool(df)
+            rt = get_realtime_engine()
+            recent = rt.recent_window(hours=24)
+            traffic = TrafficService()
+            speeds = traffic.get_zone_speeds(recent)
+            ref = get_reference_time(df, use_wall_clock=True)
+            self._trends_cache = _build_violation_trends(df, reference=ref)
 
-        # Warm short-term forecast
-        from app.models.short_term_forecaster import ShortTermParkPredictForecaster
-        st_forecaster = ShortTermParkPredictForecaster()
-        st_forecaster.train(df)
-        self._short_term_forecast_cache = st_forecaster.predict(df, ref)
+            self._analytics_cache = build_analytics_response(
+                df,
+                zone_speeds=speeds,
+                recent_df=recent,
+                reference=ref,
+                live=True,
+                traffic_meta=traffic.last_meta,
+                trends_cache=self._trends_cache,
+            )
+            self._recidivism_cache = self._build_recidivism_response(df)
+            self._shift_planner_cache = build_shift_planner_response(df, self._forecast_cache)
+            self._heatmap_cache = build_heatmap_response(df, limit=5000, zone_intensity=None, zone_speeds=speeds)
+            self._severity_cache = build_severity_response(recent if not recent.empty else df, limit=30)
+            self._corridors_cache = build_corridors_response(recent if not recent.empty else df, recent_only=False)
 
-        self._caches_warmed = True
-        logger.info("API caches warmed successfully")
+            # Warm short-term forecast
+            from app.models.short_term_forecaster import ShortTermParkPredictForecaster
+            st_forecaster = ShortTermParkPredictForecaster()
+            st_forecaster.train(df)
+            self._short_term_forecast_cache = st_forecaster.predict(df, ref)
+
+            self._caches_warmed = True
+            logger.info("API caches warmed successfully")
 
     def warm_forecast_prophet(self):
         """Run Prophet model off the request path (Celery / scheduled job)."""

@@ -1,4 +1,5 @@
 import logging
+import time
 from datetime import datetime, timezone
 
 import httpx
@@ -13,44 +14,57 @@ logger = logging.getLogger(__name__)
 class TrafficService:
     """Fetch live corridor speeds for Bengaluru zones."""
 
+    _last_speeds: dict[str, float] = {}
+    _last_source: str = "unknown"
+    _last_updated: str | None = None
+    _cache_timestamp: float = 0
+    _cache_ttl: float = 120.0  # 2 minutes cache TTL
+
+    _tomtom_disabled_until: float = 0
+    _google_disabled_until: float = 0
+
     def __init__(self):
         self._settings = get_settings()
-        self._last_speeds: dict[str, float] = {}
-        self._last_source: str = "unknown"
-        self._last_updated: str | None = None
 
     @property
     def last_meta(self) -> dict:
         return {
-            "source": self._last_source,
-            "updated_at": self._last_updated,
-            "zones": len(self._last_speeds),
+            "source": TrafficService._last_source,
+            "updated_at": TrafficService._last_updated,
+            "zones": len(TrafficService._last_speeds),
         }
 
     def get_zone_speeds(self, recent_violations: pd.DataFrame | None = None) -> dict[str, float]:
+        now = time.time()
+        # Check if class-level cache is valid
+        if TrafficService._last_speeds and (now - TrafficService._cache_timestamp) < TrafficService._cache_ttl:
+            logger.debug("Using cached traffic speeds")
+            return TrafficService._last_speeds
+
         speeds: dict[str, float] | None = None
 
-        if self._settings.google_maps_api_key:
+        if self._settings.google_maps_api_key and now > TrafficService._google_disabled_until:
             speeds = self._fetch_google_maps_speeds()
 
-        if speeds is None and self._settings.tomtom_api_key:
+        if speeds is None and self._settings.tomtom_api_key and now > TrafficService._tomtom_disabled_until:
             speeds = self._fetch_tomtom_speeds()
 
         if speeds is None:
             speeds = self._density_based_speeds(recent_violations)
-            self._last_source = "violation_density_model"
+            TrafficService._last_source = "violation_density_model"
         else:
-            self._last_source = "live_traffic_api"
+            TrafficService._last_source = "live_traffic_api"
 
-        self._last_speeds = speeds
-        self._last_updated = datetime.now(timezone.utc).isoformat()
+        TrafficService._last_speeds = speeds
+        TrafficService._last_updated = datetime.now(timezone.utc).isoformat()
+        TrafficService._cache_timestamp = now
         return speeds
 
     def _fetch_google_maps_speeds(self) -> dict[str, float] | None:
         key = self._settings.google_maps_api_key
         speeds = {}
         try:
-            with httpx.Client(timeout=10.0) as client:
+            with httpx.Client(timeout=5.0) as client:
                 for zone, meta in BENGALURU_ZONES.items():
                     lat, lon = meta["center"]
                     url = "https://maps.googleapis.com/maps/api/directions/json"
@@ -65,7 +79,20 @@ class TrafficService:
                             "key": key,
                         },
                     )
+                    
+                    if resp.status_code in (401, 403):
+                        logger.warning("Google Maps API key returned status %d. Disabling Google Maps API for 10 minutes.", resp.status_code)
+                        TrafficService._google_disabled_until = time.time() + 600
+                        return None
+                        
+                    resp.raise_for_status()
                     data = resp.json()
+                    
+                    if data.get("status") == "REQUEST_DENIED":
+                        logger.warning("Google Maps API returned REQUEST_DENIED. Disabling Google Maps API for 10 minutes.")
+                        TrafficService._google_disabled_until = time.time() + 600
+                        return None
+                        
                     if data.get("status") != "OK" or not data.get("routes"):
                         continue
                     leg = data["routes"][0]["legs"][0]
@@ -75,7 +102,7 @@ class TrafficService:
                     speed_kmh = (distance / 1000) / (seconds / 3600) if seconds > 0 else meta["baseline_speed_kmh"]
                     speeds[zone] = round(min(speed_kmh, meta["baseline_speed_kmh"]), 2)
             if speeds:
-                self._last_source = "google_maps"
+                TrafficService._last_source = "google_maps"
                 return speeds
         except Exception as exc:
             logger.warning("Google Maps traffic fetch failed: %s", exc)
@@ -85,18 +112,25 @@ class TrafficService:
         key = self._settings.tomtom_api_key
         speeds = {}
         try:
-            with httpx.Client(timeout=10.0) as client:
+            with httpx.Client(timeout=5.0) as client:
                 for zone, meta in BENGALURU_ZONES.items():
                     lat, lon = meta["center"]
                     url = f"https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/10/json"
                     resp = client.get(url, params={"key": key, "point": f"{lat},{lon}"})
+                    
+                    if resp.status_code in (401, 403):
+                        logger.warning("TomTom API key returned status %d. Disabling TomTom API for 10 minutes.", resp.status_code)
+                        TrafficService._tomtom_disabled_until = time.time() + 600
+                        return None
+                        
+                    resp.raise_for_status()
                     data = resp.json()
                     flow = data.get("flowSegmentData", {})
                     speed = flow.get("currentSpeed")
                     if speed is not None:
                         speeds[zone] = round(float(speed), 2)
             if speeds:
-                self._last_source = "tomtom"
+                TrafficService._last_source = "tomtom"
                 return speeds
         except Exception as exc:
             logger.warning("TomTom traffic fetch failed: %s", exc)

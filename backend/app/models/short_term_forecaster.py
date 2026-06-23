@@ -40,6 +40,16 @@ class ShortTermParkPredictForecaster:
                 self._compute_fallback_averages(df)
                 return
 
+            max_ts = working["created_datetime"].max()
+            if pd.notna(max_ts):
+                cutoff_time = max_ts - pd.Timedelta(days=14)
+                working = working[working["created_datetime"] >= cutoff_time]
+
+            if working.empty or len(working) < 100:
+                logger.warning("Insufficient data points in the last 14 days. Using fallback averages.")
+                self._compute_fallback_averages(df)
+                return
+
             # Determine dataset time range
             min_time = working["created_datetime"].min().floor("15min")
             max_time = working["created_datetime"].max().ceil("15min")
@@ -158,71 +168,90 @@ class ShortTermParkPredictForecaster:
             working["created_datetime"] = pd.to_datetime(working["created_datetime"], utc=True, errors="coerce")
             working = working.dropna(subset=["created_datetime", "zone"])
 
+        if not working.empty:
+            t_60 = ref_tz - timedelta(minutes=60)
+            recent_violations = working[(working["created_datetime"] > t_60) & (working["created_datetime"] <= ref_tz)]
+        else:
+            recent_violations = pd.DataFrame()
+
+        counts_15 = {}
+        counts_30 = {}
+        counts_45 = {}
+        counts_60 = {}
+
+        if not recent_violations.empty:
+            t_15 = ref_tz - timedelta(minutes=15)
+            t_30 = ref_tz - timedelta(minutes=30)
+            t_45 = ref_tz - timedelta(minutes=45)
+
+            mask_15 = recent_violations["created_datetime"] > t_15
+            mask_30 = (recent_violations["created_datetime"] > t_30) & (recent_violations["created_datetime"] <= t_15)
+            mask_45 = (recent_violations["created_datetime"] > t_45) & (recent_violations["created_datetime"] <= t_30)
+            mask_60 = recent_violations["created_datetime"] <= t_45
+
+            counts_15 = recent_violations[mask_15].groupby("zone").size().to_dict()
+            counts_30 = recent_violations[mask_30].groupby("zone").size().to_dict()
+            counts_45 = recent_violations[mask_45].groupby("zone").size().to_dict()
+            counts_60 = recent_violations[mask_60].groupby("zone").size().to_dict()
+
+        features_list = []
+        hour = ref_tz.hour
+        minute = ref_tz.minute
+        dayofweek = ref_tz.dayofweek
+
         for zone in BENGALURU_ZONES:
+            c_15 = counts_15.get(zone, 0)
+            c_30 = counts_30.get(zone, 0)
+            c_45 = counts_45.get(zone, 0)
+            c_60 = counts_60.get(zone, 0)
+
+            rolling_mean_1h = (c_15 + c_30 + c_45 + c_60) / 4.0
+
+            features = {
+                "lag_1": c_15,
+                "lag_2": c_30,
+                "lag_3": c_45,
+                "rolling_mean_1h": rolling_mean_1h,
+                "hour": hour,
+                "minute": minute,
+                "dayofweek": dayofweek,
+                "current_violations": c_15
+            }
+            for z in BENGALURU_ZONES:
+                features[f"zone_{z}"] = 1.0 if z == zone else 0.0
+            features_list.append(features)
+
+        X_pred_all = pd.DataFrame(features_list)
+        feature_cols = [
+            "lag_1", "lag_2", "lag_3", "rolling_mean_1h",
+            "hour", "minute", "dayofweek"
+        ] + [f"zone_{z}" for z in BENGALURU_ZONES]
+        X_pred = X_pred_all[feature_cols]
+
+        use_ml = False
+        if self.is_trained:
+            try:
+                preds_15_batch = self.model_15m.predict(X_pred)
+                preds_30_batch = self.model_30m.predict(X_pred)
+
+                # estimators_preds shape: (50, 6)
+                estimators_preds = np.array([tree.predict(X_pred.values) for tree in self.model_15m.estimators_])
+                std_devs = np.std(estimators_preds, axis=0)
+                mean_preds = np.mean(estimators_preds, axis=0)
+                confidences = 1.0 - std_devs / (mean_preds + 1.0)
+                confidences = np.clip(confidences, 0.4, 0.95)
+                use_ml = True
+            except Exception as e:
+                logger.warning("ML batch prediction failed: %s. Using fallback.", e)
+
+        for i, zone in enumerate(BENGALURU_ZONES):
             meta = BENGALURU_ZONES[zone]
+            current_violations = int(X_pred_all.loc[i, "current_violations"])
 
-            # Count violations in sliding windows for this zone
-            zone_data = working[working["zone"] == zone] if not working.empty else pd.DataFrame()
-
-            def get_count_in_window(start_delta, end_delta):
-                if zone_data.empty:
-                    return 0
-                start = ref_tz - start_delta
-                end = ref_tz - end_delta
-                return int(((zone_data["created_datetime"] > start) & (zone_data["created_datetime"] <= end)).sum())
-
-            c_15 = get_count_in_window(timedelta(minutes=15), timedelta(minutes=0))
-            c_30 = get_count_in_window(timedelta(minutes=30), timedelta(minutes=15))
-            c_45 = get_count_in_window(timedelta(minutes=45), timedelta(minutes=30))
-            c_60 = get_count_in_window(timedelta(minutes=60), timedelta(minutes=45))
-
-            current_violations = c_15
-
-            if self.is_trained:
-                try:
-                    # Construct feature vector
-                    lag_1 = c_15
-                    lag_2 = c_30
-                    lag_3 = c_45
-                    rolling_mean_1h = (c_15 + c_30 + c_45 + c_60) / 4.0
-
-                    hour = ref_tz.hour
-                    minute = ref_tz.minute
-                    dayofweek = ref_tz.dayofweek
-
-                    features = {
-                        "lag_1": lag_1,
-                        "lag_2": lag_2,
-                        "lag_3": lag_3,
-                        "rolling_mean_1h": rolling_mean_1h,
-                        "hour": hour,
-                        "minute": minute,
-                        "dayofweek": dayofweek
-                    }
-                    for z in BENGALURU_ZONES:
-                        features[f"zone_{z}"] = 1.0 if z == zone else 0.0
-
-                    feature_cols = [
-                        "lag_1", "lag_2", "lag_3", "rolling_mean_1h",
-                        "hour", "minute", "dayofweek"
-                    ] + [f"zone_{z}" for z in BENGALURU_ZONES]
-
-                    X_pred = pd.DataFrame([features])[feature_cols]
-
-                    # Predict
-                    pred_15 = max(0, round_half_up(self.model_15m.predict(X_pred)[0]))
-                    pred_30 = max(0, round_half_up(self.model_30m.predict(X_pred)[0]))
-
-                    # Confidence score based on estimator variance
-                    preds_15_trees = np.array([tree.predict(X_pred.values)[0] for tree in self.model_15m.estimators_])
-                    std_dev = np.std(preds_15_trees)
-                    mean_pred = np.mean(preds_15_trees)
-                    confidence = 1.0 - std_dev / (mean_pred + 1.0)
-                    confidence = float(np.clip(confidence, 0.4, 0.95))
-
-                except Exception as e:
-                    logger.warning("ML prediction failed for zone %s: %s. Using fallback.", zone, e)
-                    pred_15, pred_30, confidence = self._get_fallback_prediction(zone, ref_tz)
+            if use_ml:
+                pred_15 = max(0, round_half_up(preds_15_batch[i]))
+                pred_30 = max(0, round_half_up(preds_30_batch[i]))
+                confidence = float(confidences[i])
             else:
                 pred_15, pred_30, confidence = self._get_fallback_prediction(zone, ref_tz)
 

@@ -31,6 +31,8 @@ function intensityColor(score) {
 }
 
 
+const MAPMYINDIA_KEY = import.meta.env.VITE_MAPMYINDIA_API_KEY || '';
+
 export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320px] sm:h-[400px] md:h-[480px]' }) {
   const features = data?.features || [];
 
@@ -52,7 +54,15 @@ export default function HeatMap({ data, zoneIntensity = {}, className = 'h-[320p
     <div className={`overflow-hidden rounded-xl border border-command-border ${className}`}>
       <MapContainer center={BENGALURU_CENTER} zoom={12} scrollWheelZoom preferCanvas style={{ height: '100%' }}>
         <LayersControl position="topright">
-          <LayersControl.BaseLayer checked name="Google Streets">
+          {MAPMYINDIA_KEY && (
+            <LayersControl.BaseLayer checked={false} name="MapmyIndia (Mappls)">
+              <TileLayer
+                attribution='&copy; <a href="https://www.mappls.com/">Mappls MapmyIndia</a>'
+                url={`https://apis.mapmyindia.com/advancedmaps/v1/${MAPMYINDIA_KEY}/map_style/{z}/{x}/{y}.png`}
+              />
+            </LayersControl.BaseLayer>
+          )}
+          <LayersControl.BaseLayer checked={true} name="Google Streets">
             <TileLayer
               attribution="&copy; Google Maps"
               url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"

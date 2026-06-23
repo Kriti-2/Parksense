@@ -8,6 +8,7 @@ import RecidivismMap from '../components/RecidivismMap';
 import LiveStatusBar from '../components/LiveStatusBar';
 
 const BENGALURU_CENTER = [12.9716, 77.5946];
+const MAPMYINDIA_KEY = import.meta.env.VITE_MAPMYINDIA_API_KEY || '';
 
 const corridorColors = {
   CLEAR: '#3D5A4A',      // Deep Forest Sage
@@ -132,7 +133,15 @@ export default function Corridors() {
           <div className="lg:col-span-2 h-96 overflow-hidden rounded-xl border border-command-border text-left relative">
             <MapContainer center={BENGALURU_CENTER} zoom={12} style={{ height: '100%' }}>
               <LayersControl position="topright">
-                <LayersControl.BaseLayer checked name="Google Streets">
+                {MAPMYINDIA_KEY && (
+                  <LayersControl.BaseLayer checked={false} name="MapmyIndia (Mappls)">
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.mappls.com/">Mappls MapmyIndia</a>'
+                      url={`https://apis.mapmyindia.com/advancedmaps/v1/${MAPMYINDIA_KEY}/map_style/{z}/{x}/{y}.png`}
+                    />
+                  </LayersControl.BaseLayer>
+                )}
+                <LayersControl.BaseLayer checked={true} name="Google Streets">
                   <TileLayer
                     attribution="&copy; Google Maps"
                     url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"

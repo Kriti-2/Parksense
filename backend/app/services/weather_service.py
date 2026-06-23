@@ -136,10 +136,10 @@ class WeatherService:
             )
             return data
         except Exception as exc:
-            logger.warning("Weather API fetch failed: %s — using cache or neutral", exc)
-            if self._cache is not None:
-                return self._cache
-            return self._neutral_weather()
+            logger.warning("Weather API fetch failed: %s — caching neutral fallback for %ds", exc, self._cache_ttl)
+            self._cache = self._neutral_weather()
+            self._cache_timestamp = time.time()
+            return self._cache
 
     def get_escalation(self) -> tuple[float, float]:
         """Return (multiplier, severity_boost) for current weather."""

@@ -206,7 +206,7 @@ export default function Predict() {
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div>
           <h2 className="text-xl font-bold text-gray-900 tracking-tight" style={{ fontFamily: "'Inter', sans-serif" }}>
-            {activeTab === '24h' ? 'ParkPredict — 24h Forecast' : 'ParkPredict — Sub-Hourly ML Forecast'}
+            {activeTab === '24h' ? 'MargPredict — 24h Forecast' : 'MargPredict — Sub-Hourly ML Forecast'}
           </h2>
           <p className="mt-1 text-xs text-gray-400 font-medium" style={{ fontFamily: "'Inter', sans-serif" }}>
             {activeTab === '24h'

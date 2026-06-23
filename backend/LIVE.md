@@ -1,6 +1,6 @@
 # Live Mode — Real-Time Bengaluru Data
 
-ParkSense AI runs in **live mode** by default. The dashboard updates every 30 seconds via WebSocket without manual refresh.
+MargSense runs in **live mode** by default. The dashboard updates every 30 seconds via WebSocket without manual refresh.
 
 ## What is live
 

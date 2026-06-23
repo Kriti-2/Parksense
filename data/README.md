@@ -8,7 +8,7 @@ The Flipkart Gridlock hackathon violation CSV is **not included in this reposito
 2. Place the file at the project root:
 
 ```
-parksense/jan to may police violation_anonymized791b166 (2).csv
+margsense/jan to may police violation_anonymized791b166 (2).csv
 ```
 
 3. Or set a custom path in `backend/.env`:

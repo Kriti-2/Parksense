@@ -1,4 +1,4 @@
-# ParkSense AI — Authentication
+# MargSense — Authentication
 
 ## Roles
 
@@ -11,8 +11,8 @@
 
 | Email | Password | Role |
 |-------|----------|------|
-| `user@parksense.demo` | `user123` | Citizen |
-| `officer@parksense.demo` | `officer123` | Officer |
+| `user@margsense.demo` | `user123` | Citizen |
+| `officer@margsense.demo` | `officer123` | Officer |
 
 ## User registration
 

@@ -1,4 +1,4 @@
-# 🚦 ParkSense AI (मार्ग Sense)
+# 🚦 MargSense (मार्ग Sense)
 
 **Bengaluru's AI-Powered Parking Congestion Intelligence & Traffic Enforcement Platform**
 
@@ -9,13 +9,13 @@
 [![Celery](https://img.shields.io/badge/Celery-37814A?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev/)
 [![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
 
-ParkSense AI (मार्ग Sense) is a next-generation civic management and predictive law-enforcement platform designed for Bengaluru. It leverages AI models, spatial optimization algorithms, and real-time streaming data to transition traffic management from *reactive enforcement* to *proactive prevention*.
+MargSense (मार्ग Sense) is a next-generation civic management and predictive law-enforcement platform designed for Bengaluru. It leverages AI models, spatial optimization algorithms, and real-time streaming data to transition traffic management from *reactive enforcement* to *proactive prevention*.
 
 ---
 
 ## 🌟 Key Capabilities
 
-### 1. 🔮 ParkPredict (Time-Series Forecasting)
+### 1. 🔮 MargPredict (Time-Series Forecasting)
 * Powered by **Facebook Prophet** and custom short-term regression models.
 * Predicts parking violations and congestion hotspots 24 hours in advance at high-risk zones across Bengaluru (Koramangala, HSR Layout, Indiranagar, MG Road, Silk Board, Whitefield).
 * Accounts for time of day, day of week, seasonal events, and local weather forecasts.
@@ -118,7 +118,7 @@ graph TD
 ## 📂 Project Structure
 
 ```
-parksense/
+margsense/
 ├── backend/
 │   ├── app/
 │   │   ├── auth/            # JWT authentication, dependencies, and roles
@@ -235,8 +235,8 @@ On system startup, demo credentials are automatically seeded into the database:
 
 | Role | Username / Email | Password | Access Privileges |
 | :--- | :--- | :--- | :--- |
-| **Citizen (user)** | `user@parksense.demo` | `user123` | Citizen dashboard, Eco-routing, notice board, personal carbon credits. |
-| **Officer (officer)** | `officer@parksense.demo` | `officer123` | Full control center, AI forecasts, analytics dashboards, shift planners, CCTV streams. |
+| **Citizen (user)** | `user@margsense.demo` | `user123` | Citizen dashboard, Eco-routing, notice board, personal carbon credits. |
+| **Officer (officer)** | `officer@margsense.demo` | `officer123` | Full control center, AI forecasts, analytics dashboards, shift planners, CCTV streams. |
 
 *For production deployments, Google OAuth can be configured for Bengaluru police officers (see [backend/AUTH.md](backend/AUTH.md)).*
 
@@ -255,7 +255,7 @@ On system startup, demo credentials are automatically seeded into the database:
 | `GET /public/traffic-routes` | `GET` | Public | Fetch GeoJSON representation of connected Bengaluru road lines |
 | `GET /heatmap` | `GET` | Public | Get raw violation heatmap geo-data points |
 | `GET /analytics` | `GET` | Public | Fetch economic losses, congestion fingerprints, and overall KPIs |
-| `GET /predictions` | `GET` | Public | Run ParkPredict 24h predictive hourly violations forecaster |
+| `GET /predictions` | `GET` | Public | Run MargPredict 24h predictive hourly violations forecaster |
 | `GET /severity-queue` | `GET` | Officer | Priority queue of blocking violations needing immediate towing |
 | `GET /corridors` | `GET` | Public | List emergency zones, green corridor status, and obstruction markers |
 | `GET /shift-planner` | `GET` | Officer | Get optimized shift schedule recommendations for deployment |

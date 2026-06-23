@@ -1,4 +1,4 @@
-# ParkSense AI Backend
+# MargSense Backend
 
 FastAPI backend for parking congestion intelligence in Bengaluru.
 

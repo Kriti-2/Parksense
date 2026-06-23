@@ -17,7 +17,7 @@ JWT auth, rate limiting, Celery workers, Docker, and GitHub Actions CI/CD.
 ```bash
 curl -X POST http://localhost:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"username":"officer","password":"parksense-demo"}'
+  -d '{"username":"officer","password":"margsense-demo"}'
 ```
 
 Use the token:

@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import ChatBot from '../components/ChatBot';
 import { useTranslation, LanguageSelector } from '../context/LanguageContext';
+import Footer from '../components/Footer';
 
 export default function DashboardLayout({ children }) {
   const { user, logout } = useAuth();
@@ -181,10 +182,11 @@ export default function DashboardLayout({ children }) {
       </header>
 
       {/* ── Main content ── */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl px-4 md:px-6 pb-8">
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <div className="mx-auto max-w-7xl w-full px-4 md:px-6 pb-8 flex-1">
           {children || <Outlet />}
         </div>
+        <Footer />
       </main>
 
       <ChatBot />

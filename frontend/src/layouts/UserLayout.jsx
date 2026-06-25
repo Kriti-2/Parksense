@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import NoticesBanner from '../components/NoticesBanner';
 import ChatBot from '../components/ChatBot';
 import { useTranslation, LanguageSelector } from '../context/LanguageContext';
+import Footer from '../components/Footer';
 
 const USER_NAV = [
   { to: '/', key: 'home', end: true },
@@ -178,10 +179,11 @@ export default function UserLayout({ children }) {
       </header>
 
       {/* ── Main ── */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-7xl px-4 md:px-6 pb-8">
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <div className="mx-auto max-w-7xl w-full px-4 md:px-6 pb-8 flex-1">
           {children || <Outlet />}
         </div>
+        <Footer />
       </main>
 
       <ChatBot context="citizen" />

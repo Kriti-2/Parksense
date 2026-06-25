@@ -4,7 +4,7 @@ import { api } from '../api/client';
 import { useLiveFeed } from '../hooks/useLiveFeed';
 import { useAuth } from '../context/AuthContext';
 import KPICard from '../components/KPICard';
-import { useTranslation } from '../context/LanguageContext';
+import { useTranslation, TranslatedText } from '../context/LanguageContext';
 import PageLoader from '../components/PageLoader';
 
 const HeatMap = lazy(() => import('../components/HeatMap'));
@@ -26,8 +26,8 @@ function StatPill({ icon, iconBg, value, label, sub }) {
       </div>
       <div className="min-w-0">
         <div className="text-sm font-bold text-gray-900 leading-tight">{value}</div>
-        <div className="text-[10px] text-gray-400 leading-tight">{label}</div>
-        <div className="text-[10px] text-gray-300 leading-none">{sub}</div>
+        <div className="text-[10px] text-gray-400 leading-tight"><TranslatedText text={label} /></div>
+        <div className="text-[10px] text-gray-300 leading-none"><TranslatedText text={sub} /></div>
       </div>
     </div>
   );
@@ -91,13 +91,13 @@ function HeroSection({ analytics, lastTick, connected, isOfficer }) {
 
           {/* Headline */}
           <h1 className="text-white font-black leading-tight mb-2 sm:mb-3" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.6rem)', textShadow: '0 2px 16px rgba(0,0,0,0.5)' }}>
-            Making Bengaluru<br />
-            Move Smarter.
+            <TranslatedText text="Making Bengaluru" /><br />
+            <TranslatedText text="Move Smarter." />
           </h1>
 
           {/* Subtitle */}
           <p className="text-white/65 text-xs sm:text-sm leading-relaxed mb-4 sm:mb-7 max-w-xs">
-            Predict congestion. Detect violations. Optimize mobility.
+            <TranslatedText text="Predict congestion. Detect violations. Optimize mobility." />
           </p>
 
           {/* CTA Buttons */}
@@ -110,7 +110,7 @@ function HeroSection({ analytics, lastTick, connected, isOfficer }) {
               className="flex items-center gap-2 bg-[#5E8599] hover:bg-[#4A6C7D] text-white text-sm font-bold px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg shadow-lg transition-colors cursor-pointer"
             >
               <span className="h-2 w-2 rounded-full bg-white animate-pulse" />
-              Live Feed
+              <TranslatedText text="Live Feed" />
             </button>
             <button
               onClick={() => navigate('/predict')}
@@ -119,7 +119,7 @@ function HeroSection({ analytics, lastTick, connected, isOfficer }) {
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
-              Predict Violations
+              <TranslatedText text="Predict Violations" />
             </button>
           </div>
         </div>
@@ -167,8 +167,8 @@ function HeroSection({ analytics, lastTick, connected, isOfficer }) {
               <span className="h-3 w-3 rounded-full bg-[#8A9E85] animate-pulse block" />
             </div>
             <div>
-              <div className="text-xs font-black text-[#8A9E85] tracking-wider">LIVE</div>
-              <div className="text-[10px] text-gray-400">Live Feed</div>
+              <div className="text-xs font-black text-[#8A9E85] tracking-wider"><TranslatedText text="LIVE" /></div>
+              <div className="text-[10px] text-gray-400"><TranslatedText text="Live Feed" /></div>
             </div>
           </div>
 
@@ -331,7 +331,7 @@ export default function Homepage() {
     return (
       <div className="animate-fadeIn">
         <HeroSection analytics={null} lastTick={null} connected={false} isOfficer={isOfficer} />
-        <PageLoader loadingText="Loading dashboard data..." />
+        <PageLoader loadingText={<TranslatedText text="Loading dashboard data..." />} />
       </div>
     );
   }
@@ -439,7 +439,7 @@ export default function Homepage() {
 
         <Suspense fallback={
           <div className="h-20 animate-pulse bg-command-panel border border-command-border rounded-xl flex items-center justify-center text-xs text-command-muted">
-            Loading weather forecast...
+            <TranslatedText text="Loading weather forecast..." />
           </div>
         }>
           <WeatherBanner weatherData={predictions?.weather_escalation} liveWeather={lastTick?.weather} />
@@ -450,28 +450,28 @@ export default function Homepage() {
             <KPICard
               title={t('totalViolations')}
               value={kpis.total_violations?.toLocaleString('en-IN') || '—'}
-              subtitle="Bengaluru police dataset"
+              subtitle={<TranslatedText text="Bengaluru police dataset" />}
               sparklineData={analytics?.violation_trends?.map((t) => t.violations) || []}
               variant="accent"
             />
             <KPICard
               title={t('activeHotspots')}
               value={kpis.active_hotspots || 0}
-              subtitle="Live congestion ≥ 50"
+              subtitle={<TranslatedText text="Live congestion ≥ 50" />}
               sparklineData={activeHotspotsHistory}
               variant="warning"
             />
             <KPICard
               title={t('violations1h')}
               value={lastTick?.kpis?.violations_last_hour ?? '—'}
-              subtitle="Rolling live window"
+              subtitle={<TranslatedText text="Rolling live window" />}
               sparklineData={violationsLastHourHistory}
               variant="danger"
             />
             <KPICard
               title={t('avgCongestionScore')}
               value={kpis.avg_congestion_score || 0}
-              subtitle="Traffic + violation signal"
+              subtitle={<TranslatedText text="Traffic + violation signal" />}
               sparklineData={avgCongestionHistory}
               variant="default"
             />
@@ -479,8 +479,8 @@ export default function Homepage() {
           <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
-                <h3 className="text-base font-bold text-gray-900">Live Traffic & Congestion Monitoring</h3>
-                <p className="text-xs text-gray-400">Real-time visualization of congestion levels and violation hotspots</p>
+                <h3 className="text-base font-bold text-gray-900"><TranslatedText text="Live Traffic & Congestion Monitoring" /></h3>
+                <p className="text-xs text-gray-400"><TranslatedText text="Real-time visualization of congestion levels and violation hotspots" /></p>
               </div>
               
               {/* View Mode Toggle */}
@@ -493,7 +493,7 @@ export default function Homepage() {
                       : 'text-gray-450 hover:text-gray-700'
                   }`}
                 >
-                  2D Heatmap
+                  <TranslatedText text="2D Heatmap" />
                 </button>
                 <button
                   onClick={() => setMapView('3d')}
@@ -503,14 +503,14 @@ export default function Homepage() {
                       : 'text-gray-450 hover:text-gray-700'
                   }`}
                 >
-                  3D Digital Twin
+                  <TranslatedText text="3D Digital Twin" />
                 </button>
               </div>
             </div>
 
             <Suspense fallback={
               <div className="h-[300px] sm:h-[400px] md:h-[450px] animate-pulse bg-command-panel border border-command-border rounded-xl flex items-center justify-center text-xs text-command-muted">
-                Initializing live mapping view...
+                <TranslatedText text="Initializing live mapping view..." />
               </div>
             }>
               {mapView === '2d' ? (

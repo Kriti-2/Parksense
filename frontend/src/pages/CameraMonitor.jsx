@@ -642,7 +642,7 @@ export default function CameraMonitor() {
               }
             </span>
           </div>
-          <LiveStatusBar connected={connected} status={status} lastTick={lastTick} />
+          <LiveStatusBar connected={connected} status={status} lastTick={lastTick} showLiveBadge={false} />
         </div>
       </div>
 
